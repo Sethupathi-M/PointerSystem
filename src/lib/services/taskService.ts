@@ -1,19 +1,25 @@
 import { prisma } from "@/lib/prisma";
 import { Task, TaskType, PointsType } from "@/generated/prisma";
 
-
 export const taskService = {
   // Get all tasks (optionally filtered by identityId or status)
-  getAllTasks: async (identityId?: string, isActive?: boolean): Promise<Task[]> => {
+  getAllTasks: async (
+    identityId?: string,
+    isActive?: boolean
+  ): Promise<Task[]> => {
     return prisma.task.findMany({
       where: {
-        identityId: identityId ?? undefined, 
+        identityId: identityId ?? undefined,
       },
       include: {
         SubTask: true,
         counterTask: true,
       },
-      orderBy: { createdAt: "asc" },
+      orderBy: [
+        { isPinned: "desc" },
+        { sortValue: "asc" },
+        { createdAt: "asc" },
+      ],
     });
   },
 
@@ -50,14 +56,17 @@ export const taskService = {
   },
 
   // Update a task
-  updateTask: async (id: string, data: Partial<{
-    name: string;
-    isFavorited: boolean;
-    isActive: boolean;
-    isAddedToToday: boolean;
-    points: number;
-    pointsType: PointsType;
-  }>): Promise<Task> => {
+  updateTask: async (
+    id: string,
+    data: Partial<{
+      name: string;
+      isFavorited: boolean;
+      isActive: boolean;
+      isAddedToToday: boolean;
+      points: number;
+      pointsType: PointsType;
+    }>
+  ): Promise<Task> => {
     return prisma.task.update({
       where: { id },
       data,
@@ -70,7 +79,7 @@ export const taskService = {
     //   where: { id },
     // });
 
-   await prisma.$queryRaw`DELETE FROM "Task" WHERE "id" = ${id}`;
+    await prisma.$queryRaw`DELETE FROM "Task" WHERE "id" = ${id}`;
   },
 
   // Increment counter for a counter task
@@ -95,7 +104,9 @@ export const taskService = {
   },
 
   // Lock tasks based on reward redemption
-  lockTasksForReward: async (rewardCost: number): Promise<{ lockedCount: number; lockedTasks: Task[] }> => {
+  lockTasksForReward: async (
+    rewardCost: number
+  ): Promise<{ lockedCount: number; lockedTasks: Task[] }> => {
     // Get all completed tasks (isActive = false) that are not already locked, sorted by updatedAt (oldest first)
     const completedTasks = await prisma.task.findMany({
       where: {
@@ -104,17 +115,17 @@ export const taskService = {
         pointsType: PointsType.POSITIVE,
       },
       orderBy: {
-        updatedAt: 'asc', // Oldest first
+        updatedAt: "asc", // Oldest first
       },
     });
 
     // Calculate how many tasks we need to lock based on reward cost
     let pointsToLock = 0;
     const tasksToLock: Task[] = [];
-    
+
     for (const task of completedTasks) {
       if (pointsToLock >= rewardCost) break;
-      
+
       tasksToLock.push(task);
       pointsToLock += task.points;
     }
@@ -124,7 +135,7 @@ export const taskService = {
       await prisma.task.updateMany({
         where: {
           id: {
-            in: tasksToLock.map(task => task.id),
+            in: tasksToLock.map((task) => task.id),
           },
         },
         data: {
@@ -155,7 +166,7 @@ export const taskService = {
         isLocked: true,
       },
       orderBy: {
-        updatedAt: 'desc',
+        updatedAt: "desc",
       },
     });
   },

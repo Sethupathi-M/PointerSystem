@@ -5,15 +5,26 @@ import { taskApi } from "@/lib/api/taskApi";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { PointsType, Task as TaskType } from "@/generated/prisma";
+import { PointsType, Task as TaskType, TaskType as TaskTypeEnum, CounterTask, SubTask } from "@/generated/prisma";
+import { subtaskApi } from "@/lib/api/subtaskApi";
+import { SubTaskList } from "./SubTaskList";
+
+// Extended task type with counter relation
+type TaskWithCounter = TaskType & {
+  counterTask?: CounterTask | null;
+  SubTask?: SubTask[];
+};
 import PointsInput from "./PointsInput";
 
 interface TaskFormData {
   name: string;
   points: number;
   pointsType: PointsType;
+  taskType: TaskTypeEnum;
   isFavorited: boolean;
   isAddedToToday: boolean;
+  counterTarget?: number;
+  counterCurrent?: number;
 }
 
 export const TaskDetailsDrawer = ({
@@ -39,8 +50,11 @@ export const TaskDetailsDrawer = ({
       name: "",
       points: 0,
       pointsType: PointsType.POSITIVE,
+      taskType: TaskTypeEnum.DEFAULT,
       isFavorited: false,
       isAddedToToday: false,
+      counterTarget: 1,
+      counterCurrent: 0,
     },
     mode: "onChange" // Enable real-time validation
   });
@@ -55,15 +69,26 @@ export const TaskDetailsDrawer = ({
     enabled: !!selectedTaskId,
   });
 
+  // Fetch subtasks
+  const { data: subtasks = [] } = useQuery({
+    queryKey: ["subtask", selectedTaskId],
+    queryFn: () => subtaskApi.getByParentTask(selectedTaskId!),
+    enabled: !!selectedTaskId,
+  });
+
   // Update form when task data loads
   useEffect(() => {
     if (task) {
+      const taskWithCounter = task as TaskWithCounter; // Type assertion for counterTask relation
       reset({
         name: task.name,
         points: task.points,
         pointsType: task.pointsType,
+        taskType: task.taskType,
         isFavorited: task.isFavorited,
         isAddedToToday: task.isAddedToToday,
+        counterTarget: taskWithCounter.counterTask?.target || 1,
+        counterCurrent: taskWithCounter.counterTask?.count || 0,
       });
     }
   }, [task, reset]);
@@ -85,24 +110,37 @@ export const TaskDetailsDrawer = ({
   });
 
   const onSubmit = (data: TaskFormData) => {
-    updateTask({
+    const updateData: Record<string, unknown> = {
       name: data.name.trim(),
       points: data.points,
       pointsType: data.pointsType,
+      taskType: data.taskType,
       isFavorited: data.isFavorited,
       isAddedToToday: data.isAddedToToday,
-    });
+    };
+
+    // If it's a counter task, include counter data with proper integer parsing
+    if (data.taskType === TaskTypeEnum.COUNTER) {
+      updateData.counterTarget = parseInt(String(data.counterTarget || 1), 10);
+      updateData.counterCurrent = parseInt(String(data.counterCurrent || 0), 10);
+    }
+
+    updateTask(updateData);
   };
 
   const handleCancel = () => {
     // Reset form to original values
     if (task) {
+      const taskWithCounter = task as TaskWithCounter; // Type assertion for counterTask relation
       reset({
         name: task.name,
         points: task.points,
         pointsType: task.pointsType,
+        taskType: task.taskType,
         isFavorited: task.isFavorited,
         isAddedToToday: task.isAddedToToday,
+        counterTarget: taskWithCounter.counterTask?.target || 1,
+        counterCurrent: taskWithCounter.counterTask?.count || 0,
       });
     }
     clearSelectedTask();
@@ -168,6 +206,106 @@ export const TaskDetailsDrawer = ({
                   )}
                 </div>
 
+                {/* Task Type */}
+                <div>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">
+                    Task Type
+                  </label>
+                  <select
+                    {...register("taskType", { required: "Task type is required" })}
+                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    aria-label="Select task type"
+                  >
+                    <option value={TaskTypeEnum.DEFAULT}>Default</option>
+                    <option value={TaskTypeEnum.COUNTER}>Counter</option>
+                  </select>
+                  {errors.taskType && (
+                    <p className="text-red-400 text-sm mt-1">{errors.taskType.message}</p>
+                  )}
+                </div>
+
+                {/* Counter Task Inputs - Only show when Counter is selected */}
+                {watchedValues.taskType === TaskTypeEnum.COUNTER && (
+                  <div className="space-y-4 p-4 bg-zinc-800/50 rounded-lg border border-zinc-600/30">
+                    <h3 className="text-sm font-medium text-zinc-300 mb-3">Counter Settings</h3>
+                    
+                    {/* Target Count */}
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-300 mb-2">
+                        Target Count
+                      </label>
+                      <input
+                        {...register("counterTarget", {
+                          required: "Target count is required for counter tasks",
+                          min: {
+                            value: 1,
+                            message: "Target count must be at least 1"
+                          },
+                          max: {
+                            value: 1000,
+                            message: "Target count must be less than 1,000"
+                          },
+                          valueAsNumber: true
+                        })}
+                        type="number"
+                        min="1"
+                        max="1000"
+                        className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Enter target count"
+                        aria-label="Enter target count for counter task"
+                      />
+                      {errors.counterTarget && (
+                        <p className="text-red-400 text-sm mt-1">{errors.counterTarget.message}</p>
+                      )}
+                    </div>
+
+                    {/* Current Count */}
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-300 mb-2">
+                        Current Count
+                      </label>
+                      <input
+                        {...register("counterCurrent", {
+                          required: "Current count is required for counter tasks",
+                          min: {
+                            value: 0,
+                            message: "Current count must be 0 or greater"
+                          },
+                          valueAsNumber: true
+                        })}
+                        type="number"
+                        min="0"
+                        className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Enter current count"
+                        aria-label="Enter current count for counter task"
+                      />
+                      {errors.counterCurrent && (
+                        <p className="text-red-400 text-sm mt-1">{errors.counterCurrent.message}</p>
+                      )}
+                    </div>
+
+                    {/* Progress Indicator */}
+                    {watchedValues.counterTarget && watchedValues.counterCurrent !== undefined && (
+                      <div className="mt-3">
+                        <div className="flex justify-between text-sm text-zinc-400 mb-1">
+                          <span>Progress</span>
+                          <span>
+                            {watchedValues.counterCurrent} / {watchedValues.counterTarget}
+                          </span>
+                        </div>
+                        <div className="w-full bg-zinc-700 rounded-full h-2">
+                          <div
+                            className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-300"
+                            style={{
+                              width: `${Math.min(100, (watchedValues.counterCurrent / watchedValues.counterTarget) * 100)}%`
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Points */}
                 <div>
                   <label className="block text-sm font-medium text-zinc-300 mb-2">
@@ -219,6 +357,19 @@ export const TaskDetailsDrawer = ({
                     />
                     <span className="text-sm text-zinc-300">Add to Today</span>
                   </label>
+                </div>
+
+                {/* Subtasks Section */}
+                <div className="space-y-3">
+                  <div className="border-t border-zinc-700 pt-4">
+                    <h3 className="text-sm font-medium text-zinc-300 mb-3">Subtasks</h3>
+                    <SubTaskList
+                      parentTaskId={selectedTaskId!}
+                      subtasks={subtasks}
+                      isExpanded={true}
+                      onToggle={() => {}}
+                    />
+                  </div>
                 </div>
 
                 {/* Action Buttons */}
