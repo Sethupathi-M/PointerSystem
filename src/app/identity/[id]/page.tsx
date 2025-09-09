@@ -1,18 +1,21 @@
 "use client";
-import { getIdentityBoardById } from "@/api/identity";
-import Identity from "@/app/views/Identity";
-import { useQuery } from "@tanstack/react-query";
+ 
+import { useDrawerStore } from "@/store/useDrawerStore";
+import TaskDetailsDrawer from "@/components/TaskDetailsDrawer";
+import { DrawerType } from "@/types";
+import Identity from "@/views/Identity";
 import React from "react";
-// set
+
 const IdentityPage = ({ params }: { params: { id: string } }) => {
   const { id } = params;
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["identity", id],
-    queryFn: () => getIdentityBoardById(id),
-  });
-
-  return <Identity identity={data} isLoading={isLoading}></Identity>;
+  const { isOpen, toggleDrawer } = useDrawerStore();
+  const isTaskDetailsOpen = isOpen(DrawerType.TASK_DETAILS);
+ 
+  return  <div className="flex"><Identity  id={id} />
+  <TaskDetailsDrawer isOpen={isTaskDetailsOpen} setIsOpen={()=>toggleDrawer(DrawerType.TASK_DETAILS)} />
+  </div>
+   
 };
 
 export default IdentityPage;

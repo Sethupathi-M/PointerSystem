@@ -1,16 +1,19 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { identityApi } from "@/lib/api/identityApi";
+import { useDrawerStore } from "@/store/useDrawerStore";
 import { useMainSideBar } from "@/store/useMainSideBar";
+import { DrawerType, INavItem, ListType } from "@/types";
+import { useQuery } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ChevronLeft,
   ChevronRight,
+  Gift,
   HomeIcon,
   List,
   MapPlus,
+  Star
 } from "lucide-react";
-import { useDrawerStore } from "@/store/useDrawerStore";
-import { DrawerType } from "@/types";
-import { useQuery } from "@tanstack/react-query";
-import { getIdentityBoard } from "@/api/identity";
 import { NavItem } from "./NavItem";
 import Spinner from "./Spinner";
 
@@ -19,9 +22,46 @@ export const MainSideBar = () => {
   const { openDrawer } = useDrawerStore();
   const { data, isLoading } = useQuery({
     queryKey: ["identity"],
-    queryFn: () => getIdentityBoard(),
+    queryFn: () => identityApi.getAll(),
   });
 
+  const navItems: INavItem[] = [
+    {
+      id: "my-day",
+name: "My Day",
+path: "/",
+icon: <HomeIcon />,
+count: null,
+listType: ListType.MY_DAY,
+    },
+    {
+      id: "favourites",
+      name: "Favourites",
+      path: "/favourites",
+      icon: <Star />,
+      count: null,
+      listType: ListType.FAVOURITES,
+    },
+    {
+      id: "rewards",
+      name: "Rewards",
+      path: "/rewards",
+      icon: <Gift />,
+      count: null,
+      listType: ListType.REWARDS,
+    },
+    ...(data
+      ? data.map((identity) => ({
+          id: identity.id,
+          name: identity.name,
+          path: `/identity/${identity.id}`,
+          icon: <List />,
+          count: (identity as any)?._count?.Task ?? null,
+          listType: ListType.IDENTITY,
+        }))
+      : []),
+  ]
+  
   return (
     <AnimatePresence initial={false}>
       <motion.aside
@@ -31,15 +71,15 @@ export const MainSideBar = () => {
         className="sticky h-screen border-r border-zinc-700 bg-zinc-800"
         aria-label="Sidebar navigation"
       >
-        <div className="relative flex items-center justify-between border-b border-zinc-700 p-3">
-          <div className="flex items-center gap-2">
+        <div className="relative flex items-center justify-end border-b border-zinc-700 p-3">
+          {/* <div className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-xl bg-zinc-700" />
             {isOpen && (
               <span className="text-sm font-medium text-white">
                 Project Name
               </span>
             )}
-          </div>
+          </div> */}
           <button
             className="flex h-8 w-8 items-center justify-center rounded-lg text-white hover:bg-zinc-700 transition-colors"
             onClick={() => setIsOpen(!isOpen)}
@@ -53,14 +93,15 @@ export const MainSideBar = () => {
             {isLoading ? (
               <Spinner />
             ) : (
-              data?.map((identity) => (
+              navItems?.map((navItem) => (
                 <NavItem
-                  key={identity.id}
-                  id={identity.id}
-                  icon={<List />}
-                  label={identity.title}
-                  count={identity.requiredPoints}
+                  key={navItem.id}
+                  id={navItem.id}
+                  icon={navItem.icon}
+                  label={navItem.name}
+                  count={navItem.count ?? null}
                   compact={!isOpen}
+                  listType={navItem.listType}
                 />
               ))
             )}

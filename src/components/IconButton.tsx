@@ -4,11 +4,11 @@ export const IconButton = ({
   onClick,
 }: {
   icon: React.ReactNode;
-  onClick: () => void;
-}) => {
+  onClick: (e: React.MouseEvent) => void;
+}) => { 
   return (
     <button
-      className="outline-none hover:bg-zinc-700 rounded-full flex items-center justify-center w-5 h-5 transition-colors duration-300 "
+      className="hover:cursor-pointer hover:bg-zinc-700 rounded-full flex items-center justify-center w-10 h-10 transition-colors duration-300"
       onClick={onClick}
     >
       {icon}

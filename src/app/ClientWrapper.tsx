@@ -14,7 +14,7 @@ const ClientWrapper = ({ children }: { children: React.ReactNode }) => {
       <div className="h-screen bg-gray-950">
         {/* Top bar */}
 
-        <div className="relative mx-auto flex gap-0 lg:gap-4 h-screen">
+        <div className="relative mx-auto flex h-screen">
           {/* STATIC (FLOW) DRAWER */}
           <MainSideBar />
 

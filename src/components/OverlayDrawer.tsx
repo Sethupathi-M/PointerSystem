@@ -12,7 +12,7 @@ export default function OverlayDrawer({
   children: React.ReactNode;
 }) {
   return (
-    <div className="relative h-full flex items-center justify-center">
+    <div className="relative flex items-center justify-center">
       {/* Button to open drawer */}
 
       {/* Overlay */}
