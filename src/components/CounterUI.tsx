@@ -1,9 +1,11 @@
 "use client";
-import { useState, useEffect } from "react";
-import { Plus, Minus, Target } from "lucide-react";
+import { PointsType } from "@/generated/prisma";
 import { taskApi } from "@/lib/api/taskApi";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
+import CounterPointsBadge from "./CounterPointsBadge";
+import CounterWidget from "./CounterWidget";
+import PointsInput from "./PointsInput";
 
 interface CounterUIProps {
   taskId: string;
@@ -11,6 +13,10 @@ interface CounterUIProps {
   targetCount: number;
   isCompleted?: boolean;
   disabled?: boolean;
+  defaultPoints?: number;
+  accumulatedPoints?: number;
+  inputPoints?: number;
+  pointsType?: PointsType;
 }
 
 export const CounterUI = ({
@@ -19,6 +25,10 @@ export const CounterUI = ({
   targetCount,
   isCompleted = false,
   disabled = false,
+  inputPoints = 0,
+  pointsType = PointsType.POSITIVE,
+  defaultPoints = 100,
+  accumulatedPoints = 0,
 }: CounterUIProps) => {
   // Ensure values are integers
   const intCurrentCount = parseInt(String(currentCount), 10) || 0;
@@ -26,6 +36,8 @@ export const CounterUI = ({
 
   const [localCount, setLocalCount] = useState(intCurrentCount);
   const [isAnimating, setIsAnimating] = useState(false);
+  // const [inputPoints, setInputPoints] = useState(defaultPoints);
+  // const [pointsType, setPointsType] = useState<PointsType>(PointsType.POSITIVE);
   const queryClient = useQueryClient();
 
   // Sync local count with prop changes
@@ -34,7 +46,8 @@ export const CounterUI = ({
   }, [intCurrentCount]);
 
   const { mutate: incrementCounter, isPending } = useMutation({
-    mutationFn: () => taskApi.incrementCounter(taskId),
+    mutationFn: () =>
+      taskApi.incrementCounterWithPoints(taskId, inputPoints, pointsType),
     onSuccess: () => {
       setLocalCount((prev) => prev + 1);
       queryClient.invalidateQueries({ queryKey: ["task"] });
@@ -63,62 +76,36 @@ export const CounterUI = ({
   const isTargetReached = localCount >= intTargetCount;
 
   return (
-    <div className="flex items-center gap-2">
-      {/* Bigger Counter Widget */}
-      <div className="relative bg-gradient-to-br from-slate-700/80 to-slate-800/80 rounded-lg border border-slate-600/50 backdrop-blur-sm">
-        {/* Background Effects */}
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-emerald-500/10 rounded-lg" />
-
-        <div className="relative z-10 flex items-center gap-2 px-3 py-2">
-          {/* Decrement Button */}
-          <motion.button
-            onClick={handleDecrement}
-            disabled={disabled || isCompleted || isPending || localCount <= 0}
-            className="p-2 rounded-md bg-slate-600/50 hover:bg-red-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            aria-label="Decrement counter"
-          >
-            <Minus size={16} className="text-slate-300 hover:text-red-400" />
-          </motion.button>
-
-          {/* Counter Display */}
-          <div className="flex items-center gap-2 px-3 py-1 min-w-[80px] justify-center">
-            <Target size={16} className="text-blue-400" />
-            <motion.span
-              className="text-base font-bold text-white"
-              animate={isAnimating ? { scale: [1, 1.2, 1] } : {}}
-              transition={{ duration: 0.2 }}
-            >
-              {localCount}
-            </motion.span>
-            <span className="text-base text-slate-400">/{intTargetCount}</span>
-          </div>
-
-          {/* Increment Button */}
-          <motion.button
-            onClick={handleIncrement}
-            disabled={disabled || isCompleted || isPending}
-            className="p-2 rounded-md bg-slate-600/50 hover:bg-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            aria-label="Increment counter"
-          >
-            <Plus size={16} className="text-slate-300 hover:text-emerald-400" />
-          </motion.button>
-        </div>
-
-        {/* Progress Bar */}
-        <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-600 rounded-b-lg overflow-hidden">
-          <motion.div
-            className={`h-full ${isTargetReached ? "bg-gradient-to-r from-emerald-500 to-green-500" : "bg-gradient-to-r from-blue-500 to-purple-500"}`}
-            style={{ width: `${progress}%` }}
-            initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
-            transition={{ duration: 0.3 }}
+    <div className="flex flex-col gap-3">
+      {/* Points Input Section */}
+      {/* <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <PointsInput
+            points={inputPoints}
+            setPoints={setInputPoints}
+            pointsType={pointsType}
+            setPointsType={setPointsType}
+            disabled={disabled}
           />
-        </div>
-      </div>
+        </div> */}
+
+      {/* Accumulated Points Badge */}
+      {/* </div> */}
+
+      {/* Counter Widget */}
+      <CounterWidget
+        localCount={localCount}
+        setLocalCount={setLocalCount}
+        isAnimating={isAnimating}
+        handleIncrement={handleIncrement}
+        handleDecrement={handleDecrement}
+        isCompleted={isCompleted}
+        isPending={isPending}
+        disabled={disabled}
+        intTargetCount={intTargetCount}
+        progress={progress}
+        isTargetReached={isTargetReached}
+      />
     </div>
   );
 };

@@ -10,7 +10,15 @@ import { SubTaskList } from "./SubTaskList";
 
 // Extended task type with counter relation
 type TaskWithCounter = TaskType & {
-  counterTask?: CounterTask | null;
+  counterTask?:
+    | (CounterTask & {
+        CounterDayPoints?: Array<{
+          id: string;
+          points: number;
+          day: Date;
+        }>;
+      })
+    | null;
   SubTask?: SubTask[];
   isPinned?: boolean;
   sortValue?: number;
@@ -35,6 +43,7 @@ import {
   PinOff,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import CounterPointsBadge from "./CounterPointsBadge";
 
 export const Task = ({
   task,
@@ -46,7 +55,11 @@ export const Task = ({
   const { openDrawer } = useDrawerStore();
   const { setSelectedTaskId } = useSelectedTaskStore();
   const [enabled, setEnabled] = useState(!task.isActive);
-  const [points, setPoints] = useState(task.points);
+  const [points, setPoints] = useState(
+    task.taskType === TaskTypeEnum.COUNTER
+      ? task.counterTask?.defaultPoints
+      : task.points
+  );
   const [pointsType, setPointsType] = useState<PointsType>(task.pointsType);
   const [showSubtasks, setShowSubtasks] = useState(false);
   const queryClient = useQueryClient();
@@ -239,6 +252,16 @@ export const Task = ({
                   targetCount={task.counterTask.target}
                   isCompleted={enabled}
                   disabled={task.isLocked}
+                  defaultPoints={task.counterTask.defaultPoints || 100}
+                  accumulatedPoints={
+                    task.counterTask.CounterDayPoints?.reduce(
+                      (sum: number, dayPoint: { points: number }) =>
+                        sum + dayPoint.points,
+                      0
+                    ) || 0
+                  }
+                  inputPoints={points}
+                  pointsType={pointsType}
                 />
               )}
 
@@ -255,10 +278,21 @@ export const Task = ({
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <div className="flex items-center gap-1 transition-opacity duration-300">
+              {task.taskType === TaskTypeEnum.COUNTER && task.counterTask && (
+                <CounterPointsBadge
+                  accumulatedPoints={
+                    task.counterTask?.CounterDayPoints?.reduce(
+                      (sum: number, dayPoint: { points: number }) =>
+                        sum + dayPoint.points,
+                      0
+                    ) || 0
+                  }
+                />
+              )}
               <div className={enabled || task.isLocked ? "opacity-50" : ""}>
                 <PointsInput
-                  points={points}
+                  points={points ?? 0}
                   setPoints={setPoints}
                   pointsType={pointsType}
                   setPointsType={setPointsType}
@@ -297,7 +331,6 @@ export const Task = ({
               <IconButton
                 icon={<TrashIcon className="size-6" />}
                 onClick={(e) => {
-                  debugger;
                   e.stopPropagation();
                   deleteTask(task.id);
                 }}

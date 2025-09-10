@@ -62,6 +62,20 @@ export const taskApi = {
     return data;
   },
 
+  // Increment counter task with points
+  incrementCounterWithPoints: async (
+    id: string,
+    points: number,
+    pointsType: string
+  ): Promise<{ count: number; accumulatedPoints: number }> => {
+    const { data } = await api.put(
+      "/task",
+      { points, pointsType },
+      { params: { id, action: "increment-counter-with-points" } }
+    );
+    return data;
+  },
+
   // Toggle pin status
   togglePin: async (id: string): Promise<Task> => {
     const { data } = await api.put(

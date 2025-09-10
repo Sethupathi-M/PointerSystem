@@ -75,9 +75,25 @@ model Task {
 model CounterTask {
   id        String @id @default(uuid()) @db.Uuid
   taskId    String @unique @db.Uuid
-  task      Task   @relation(fields: [taskId], references: [id])
+  task      Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
   count     Int    @default(0)
   target    Int    @default(1)
+  defaultPoints Int @default(100)
+  CounterDayPoints CounterDayPoints[]
+}
+
+model CounterDayPoints {
+  id        String @id @default(uuid()) @db.Uuid
+  counterTaskId String @db.Uuid
+  counterTask CounterTask @relation(fields: [counterTaskId], references: [id], onDelete: Cascade)
+  day       DateTime @db.Date
+  points    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([counterTaskId, day])
+  @@index([counterTaskId])
+  @@index([day])
 }
 
 model SubTask {

@@ -3,7 +3,10 @@ import { identityService } from "@/lib/services/identityService";
 import type { NextApiRequest, NextApiResponse } from "next";
 // import { identityService } from "@/lib";
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+): Promise<void> {
   const { id } = req.query;
 
   try {
@@ -11,27 +14,37 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (id && typeof id === "string") {
       switch (req.method) {
         case "GET":
-          return res.status(200).json(await identityService.getIdentityById(id));
+          res.status(200).json(await identityService.getIdentityById(id));
+          return;
         case "PUT":
-          return res.status(200).json(await identityService.updateIdentity(id, req.body));
+          res
+            .status(200)
+            .json(await identityService.updateIdentity(id, req.body));
+          return;
         case "DELETE":
-          return res.status(200).json(await identityService.deleteIdentity(id));
+          res.status(200).json(await identityService.deleteIdentity(id));
+          return;
         default:
-          return res.status(405).json({ error: `Method ${req.method} not allowed` });
+          res.status(405).json({ error: `Method ${req.method} not allowed` });
+          return;
       }
     }
 
     // Otherwise → act on collection
     switch (req.method) {
       case "GET":
-        return res.status(200).json(await identityService.getAllIdentities());
+        res.status(200).json(await identityService.getAllIdentities());
+        return;
       case "POST":
-        return res.status(201).json(await identityService.createIdentity(req.body));
+        res.status(201).json(await identityService.createIdentity(req.body));
+        return;
       default:
-        return res.status(405).json({ error: `Method ${req.method} not allowed` });
+        res.status(405).json({ error: `Method ${req.method} not allowed` });
+        return;
     }
   } catch (err: unknown) {
     console.error("Identity API error:", err);
-    return res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: "Internal Server Error" });
+    return;
   }
 }

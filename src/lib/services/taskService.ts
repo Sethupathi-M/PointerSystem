@@ -13,7 +13,11 @@ export const taskService = {
       },
       include: {
         SubTask: true,
-        counterTask: true,
+        counterTask: {
+          include: {
+            CounterDayPoints: true,
+          },
+        },
       },
       orderBy: [
         { isPinned: "desc" },
@@ -29,7 +33,11 @@ export const taskService = {
       where: { id },
       include: {
         SubTask: true,
-        counterTask: true,
+        counterTask: {
+          include: {
+            CounterDayPoints: true,
+          },
+        },
       },
     });
   },
@@ -67,6 +75,37 @@ export const taskService = {
       pointsType: PointsType;
     }>
   ): Promise<Task> => {
+    // If completing a counter task, calculate accumulated points
+    if (data.isActive === false) {
+      const task = await prisma.task.findUnique({
+        where: { id },
+        include: {
+          counterTask: {
+            include: {
+              CounterDayPoints: true,
+            },
+          },
+        },
+      });
+
+      if (task?.taskType === TaskType.COUNTER && task.counterTask) {
+        // Calculate accumulated points from daily tracking
+        const accumulatedPoints = task.counterTask.CounterDayPoints.reduce(
+          (sum, dayPoint) => sum + dayPoint.points,
+          0
+        );
+
+        // Update the task with accumulated points instead of base points
+        return prisma.task.update({
+          where: { id },
+          data: {
+            ...data,
+            points: accumulatedPoints,
+          },
+        });
+      }
+    }
+
     return prisma.task.update({
       where: { id },
       data,
@@ -75,11 +114,35 @@ export const taskService = {
 
   // Delete a task
   deleteTask: async (id: string): Promise<void> => {
-    // return prisma.task.delete({
-    //   where: { id },
-    // });
+    // First, check if it's a counter task and delete related data
+    const taskToDelete = await prisma.task.findUnique({
+      where: { id },
+      include: {
+        counterTask: true,
+      },
+    });
 
-    await prisma.$queryRaw`DELETE FROM "Task" WHERE "id" = ${id}`;
+    if (taskToDelete?.counterTask) {
+      // Delete counter day points first
+      await prisma.counterDayPoints.deleteMany({
+        where: { counterTaskId: taskToDelete.counterTask.id },
+      });
+
+      // Delete the counter task
+      await prisma.counterTask.delete({
+        where: { id: taskToDelete.counterTask.id },
+      });
+    }
+
+    // Delete subtasks if any
+    await prisma.subTask.deleteMany({
+      where: { parentTaskId: id },
+    });
+
+    // Finally, delete the task
+    await prisma.task.delete({
+      where: { id },
+    });
   },
 
   // Increment counter for a counter task
@@ -88,6 +151,73 @@ export const taskService = {
       where: { taskId },
       data: { count: { increment: incrementBy } },
     });
+  },
+
+  // Increment counter with daily points tracking
+  incrementCounterWithPoints: async (
+    taskId: string,
+    points: number,
+    pointsType: string
+  ): Promise<{ count: number; accumulatedPoints: number }> => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Get the counter task with its daily points
+    const counterTask = await prisma.counterTask.findUnique({
+      where: { taskId },
+      include: {
+        CounterDayPoints: {
+          where: {
+            day: today,
+          },
+        },
+      },
+    });
+
+    if (!counterTask) {
+      throw new Error("Counter task not found");
+    }
+
+    // Calculate the effective points based on type
+    const effectivePoints = pointsType === "POSITIVE" ? points : -points;
+
+    // Update or create today's points entry
+    await prisma.counterDayPoints.upsert({
+      where: {
+        counterTaskId_day: {
+          counterTaskId: counterTask.id,
+          day: today,
+        },
+      },
+      update: {
+        points: { increment: effectivePoints },
+      },
+      create: {
+        counterTaskId: counterTask.id,
+        day: today,
+        points: effectivePoints,
+      },
+    });
+
+    // Increment the counter
+    const updatedCounter = await prisma.counterTask.update({
+      where: { taskId },
+      data: { count: { increment: 1 } },
+      include: {
+        CounterDayPoints: true,
+      },
+    });
+
+    // Calculate accumulated points
+    const accumulatedPoints = updatedCounter.CounterDayPoints.reduce(
+      (sum, dayPoint) => sum + dayPoint.points,
+      0
+    );
+
+    return {
+      count: updatedCounter.count,
+      accumulatedPoints,
+    };
   },
 
   // Add a subtask to a task
@@ -114,6 +244,13 @@ export const taskService = {
         isLocked: false,
         pointsType: PointsType.POSITIVE,
       },
+      include: {
+        counterTask: {
+          include: {
+            CounterDayPoints: true,
+          },
+        },
+      },
       orderBy: {
         updatedAt: "asc", // Oldest first
       },
@@ -126,6 +263,8 @@ export const taskService = {
     for (const task of completedTasks) {
       if (pointsToLock >= rewardCost) break;
 
+      // For counter tasks, the points are already accumulated in the task.points field
+      // when the task was completed, so we can use task.points directly
       tasksToLock.push(task);
       pointsToLock += task.points;
     }

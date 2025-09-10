@@ -1,4 +1,4 @@
-import { Reward } from "@/generated/prisma";
+import { Reward, Task } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
 import { taskService } from "./taskService";
 
@@ -35,13 +35,16 @@ export const rewardService = {
   },
 
   // Update a reward
-  updateReward: async (id: string, data: Partial<{
-    name: string;
-    description: string;
-    cost: number;
-    imageCollection: string[];
-    isRedeemed: boolean;
-  }>): Promise<Reward> => {
+  updateReward: async (
+    id: string,
+    data: Partial<{
+      name: string;
+      description: string;
+      cost: number;
+      imageCollection: string[];
+      isRedeemed: boolean;
+    }>
+  ): Promise<Reward> => {
     return prisma.reward.update({
       where: { id },
       data,
@@ -56,7 +59,9 @@ export const rewardService = {
   },
 
   // Redeem a reward
-  redeemReward: async (id: string): Promise<{ reward: Reward; lockedTasks: any[] }> => {
+  redeemReward: async (
+    id: string
+  ): Promise<{ reward: Reward; lockedTasks: Task[] }> => {
     // First, get the reward to check its cost
     const reward = await prisma.reward.findUnique({
       where: { id },

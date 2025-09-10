@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
-) {
+): Promise<void> {
   try {
     const { method, query, body } = req;
 
@@ -15,11 +15,12 @@ export default async function handler(
       case "GET":
         // Get all tasks or single task by ID
         if (query.id) {
-          return res
+          res
             .status(200)
             .json(await taskService.getTaskById(query.id as string));
+          return;
         } else if (query.isFavorited) {
-          return res.status(200).json(
+          res.status(200).json(
             await prisma.task.findMany({
               where: {
                 isActive: true,
@@ -27,8 +28,9 @@ export default async function handler(
               },
             })
           );
+          return;
         } else if (query.isAddedToToday) {
-          return res.status(200).json(
+          res.status(200).json(
             await prisma.task.findMany({
               where: {
                 isActive: true,
@@ -36,12 +38,13 @@ export default async function handler(
               },
             })
           );
+          return;
         } else {
           const { identityId, isActive } = query;
           console.log({ identityId, isActive });
 
           // Fix: Return the correct type for an array of tasks
-          return res
+          res
             .status(200)
             .json(
               await taskService.getAllTasks(
@@ -53,6 +56,7 @@ export default async function handler(
                     : undefined
               )
             );
+          return;
         }
 
       case "POST":
@@ -81,7 +85,14 @@ export default async function handler(
 
         const newTask = await prisma.task.create({
           data: taskData,
-          include: { SubTask: true, counterTask: true },
+          include: {
+            SubTask: true,
+            counterTask: {
+              include: {
+                CounterDayPoints: true,
+              },
+            },
+          },
         });
 
         // If it's a counter task, create the counter task record
@@ -91,11 +102,13 @@ export default async function handler(
               taskId: newTask.id,
               count: parseInt(String(body.counterCurrent || 0), 10),
               target: parseInt(String(body.counterTarget || 1), 10),
+              defaultPoints: parseInt(String(body.defaultPoints || 100), 10),
             },
           });
         }
 
-        return res.status(201).json({ success: true, data: newTask });
+        res.status(201).json({ success: true, data: newTask });
+        return;
 
       case "PUT":
         // Special case: Update sort order (doesn't require task ID)
@@ -103,9 +116,10 @@ export default async function handler(
           const { taskIds } = body;
 
           if (!Array.isArray(taskIds)) {
-            return res
+            res
               .status(400)
               .json({ success: false, error: "taskIds must be an array" });
+            return;
           }
 
           // Update sort values for all tasks
@@ -118,14 +132,15 @@ export default async function handler(
 
           await Promise.all(updatePromises);
 
-          return res.status(200).json({ success: true });
+          res.status(200).json({ success: true });
+          return;
         }
 
         // Update task (requires task ID)
-        if (!query.id)
-          return res
-            .status(400)
-            .json({ success: false, error: "Task ID required" });
+        if (!query.id) {
+          res.status(400).json({ success: false, error: "Task ID required" });
+          return;
+        }
 
         // Special case: Update counter count only
         if (query.action === "increment-counter") {
@@ -134,9 +149,10 @@ export default async function handler(
           });
 
           if (!counterTask) {
-            return res
+            res
               .status(404)
               .json({ success: false, error: "Counter task not found" });
+            return;
           }
 
           const updatedCounter = await prisma.counterTask.update({
@@ -144,7 +160,39 @@ export default async function handler(
             data: { count: counterTask.count + 1 },
           });
 
-          return res.status(200).json(updatedCounter);
+          res.status(200).json(updatedCounter);
+          return;
+        }
+
+        // Special case: Update counter with daily points tracking
+        if (query.action === "increment-counter-with-points") {
+          const { points, pointsType } = body;
+
+          if (!points || !pointsType) {
+            res.status(400).json({
+              success: false,
+              error: "Points and pointsType are required",
+            });
+            return;
+          }
+
+          try {
+            const result = await taskService.incrementCounterWithPoints(
+              query.id as string,
+              points,
+              pointsType
+            );
+
+            res.status(200).json(result);
+            return;
+          } catch (error) {
+            console.error("Error incrementing counter with points:", error);
+            res.status(500).json({
+              success: false,
+              error: "Failed to increment counter with points",
+            });
+            return;
+          }
         }
 
         // Special case: Toggle pin status
@@ -154,21 +202,33 @@ export default async function handler(
           });
 
           if (!task) {
-            return res
-              .status(404)
-              .json({ success: false, error: "Task not found" });
+            res.status(404).json({ success: false, error: "Task not found" });
+            return;
           }
 
           const updatedTask = await prisma.task.update({
             where: { id: query.id as string },
             data: { isPinned: !task.isPinned },
-            include: { SubTask: true, counterTask: true },
+            include: {
+              SubTask: true,
+              counterTask: {
+                include: {
+                  CounterDayPoints: true,
+                },
+              },
+            },
           });
 
-          return res.status(200).json(updatedTask);
+          res.status(200).json(updatedTask);
+          return;
         }
 
         const updateData: Record<string, unknown> = { ...body };
+
+        // Remove counter-specific fields from task update
+        delete updateData.counterTarget;
+        delete updateData.counterCurrent;
+        delete updateData.defaultPoints;
 
         // Handle counter task updates
         if (body.taskType === TaskType.COUNTER) {
@@ -178,11 +238,13 @@ export default async function handler(
             update: {
               count: parseInt(String(body.counterCurrent || 0), 10),
               target: parseInt(String(body.counterTarget || 1), 10),
+              defaultPoints: parseInt(String(body.defaultPoints || 100), 10),
             },
             create: {
               taskId: query.id as string,
               count: parseInt(String(body.counterCurrent || 0), 10),
               target: parseInt(String(body.counterTarget || 1), 10),
+              defaultPoints: parseInt(String(body.defaultPoints || 100), 10),
             },
           });
         } else if (body.taskType === TaskType.DEFAULT) {
@@ -192,34 +254,75 @@ export default async function handler(
           });
         }
 
-        // Remove counter-specific fields from task update
-        delete updateData.counterTarget;
-        delete updateData.counterCurrent;
+        // Use taskService for updates to handle counter task completion logic
+        const updatedTask = await taskService.updateTask(
+          query.id as string,
+          updateData
+        );
 
-        const updatedTask = await prisma.task.update({
+        // Fetch the updated task with all relations
+        const taskWithRelations = await prisma.task.findUnique({
           where: { id: query.id as string },
-          data: updateData,
-          include: { SubTask: true, counterTask: true },
+          include: {
+            SubTask: true,
+            counterTask: {
+              include: {
+                CounterDayPoints: true,
+              },
+            },
+          },
         });
-        return res.status(200).json(updatedTask);
+        res.status(200).json(taskWithRelations);
+        return;
 
       case "DELETE":
         // Delete task
-        if (!query.id)
-          return res
-            .status(400)
-            .json({ success: false, error: "Task ID required" });
-        const deletedTask = await prisma.task.deleteMany({
+        if (!query.id) {
+          res.status(400).json({ success: false, error: "Task ID required" });
+          return;
+        }
+
+        // First, check if it's a counter task and delete related data
+        const taskToDelete = await prisma.task.findUnique({
+          where: { id: query.id as string },
+          include: {
+            counterTask: true,
+          },
+        });
+
+        if (taskToDelete?.counterTask) {
+          // Delete counter day points first
+          await prisma.counterDayPoints.deleteMany({
+            where: { counterTaskId: taskToDelete.counterTask.id },
+          });
+
+          // Delete the counter task
+          await prisma.counterTask.delete({
+            where: { id: taskToDelete.counterTask.id },
+          });
+        }
+
+        // Delete subtasks if any
+        await prisma.subTask.deleteMany({
+          where: { parentTaskId: query.id as string },
+        });
+
+        // Finally, delete the task
+        const deletedTask = await prisma.task.delete({
           where: { id: query.id as string },
         });
-        return res.status(200).json(deletedTask);
+
+        res.status(200).json(deletedTask);
+        return;
 
       default:
         res.setHeader("Allow", ["GET", "POST", "PUT", "DELETE"]);
-        return res.status(405).end(`Method ${method} Not Allowed`);
+        res.status(405).end(`Method ${method} Not Allowed`);
+        return;
     }
   } catch (error) {
     console.error("Task API error:", error);
-    return res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: "Internal server error" });
+    return;
   }
 }
