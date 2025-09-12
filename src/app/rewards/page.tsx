@@ -1,7 +1,7 @@
 "use client";
 
-import { RewardItem } from "@/components/RewardItem";
-import RewardDetailsDrawer from "@/components/RewardDetailsDrawer";
+import { RewardCard } from "@/components/RewardCard/RewardCard";
+import RewardDetailsDrawer from "@/components/Drawers/RewardDetailsDrawer";
 import { useDrawerStore } from "@/store/useDrawerStore";
 import { useSelectedRewardStore } from "@/store/useSelectedRewardStore";
 import { DrawerType } from "@/types";
@@ -13,18 +13,22 @@ import { Plus } from "lucide-react";
 import Spinner from "@/components/Spinner";
 
 export default function Rewards() {
-  const [filter, setFilter] = useState<'all' | 'available' | 'redeemed'>('all');
-  const { isOpen, openDrawer } = useDrawerStore();
+  const [filter, setFilter] = useState<"all" | "available" | "redeemed">("all");
+  const { isOpen, openDrawer, toggleDrawer } = useDrawerStore();
   const { clearSelectedReward } = useSelectedRewardStore();
 
   // Fetch rewards based on filter
-  const { data: rewards, isLoading, error } = useQuery({
+  const {
+    data: rewards = [],
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["reward", filter],
     queryFn: () => {
       switch (filter) {
-        case 'available':
+        case "available":
           return rewardApi.getAvailable();
-        case 'redeemed':
+        case "redeemed":
           return rewardApi.getRedeemed();
         default:
           return rewardApi.getAll();
@@ -48,17 +52,19 @@ export default function Rewards() {
     );
   }
 
-  const isRewardDetailsOpen = isOpen(DrawerType.REWARD_DETAILS);
-  console.log("isRewardDetailsOpen",isRewardDetailsOpen);
   return (
-    <div className="h-full mt-4 px-5 relative flex flex-col">
+    <div
+      className={`h-full mt-4 relative flex flex-col ${rewards.length > 3 ? "px-0" : "px-5"}`}
+    >
       {/* Header with Filter */}
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold text-white">Rewards</h1>
         <div className="flex items-center gap-2">
           <select
             value={filter}
-            onChange={(e) => setFilter(e.target.value as 'all' | 'available' | 'redeemed')}
+            onChange={(e) =>
+              setFilter(e.target.value as "all" | "available" | "redeemed")
+            }
             className="px-3 py-1 bg-zinc-800 border border-zinc-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="all">All Rewards</option>
@@ -77,10 +83,7 @@ export default function Rewards() {
         ) : rewards && rewards.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {rewards.map((reward) => (
-              <RewardItem
-                key={reward.id}
-                reward={reward}
-              />
+              <RewardCard key={reward.id} reward={reward} />
             ))}
           </div>
         ) : (
@@ -88,10 +91,9 @@ export default function Rewards() {
             <div className="text-6xl mb-4">🎁</div>
             <h3 className="text-lg font-semibold mb-2">No rewards found</h3>
             <p className="text-sm text-center">
-              {filter === 'all' 
+              {filter === "all"
                 ? "Create your first reward to get started!"
-                : `No ${filter} rewards at the moment.`
-              }
+                : `No ${filter} rewards at the moment.`}
             </p>
           </div>
         )}
@@ -100,12 +102,11 @@ export default function Rewards() {
       {/* Add Reward Button */}
       <button
         onClick={handleCreateReward}
-        className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-amber-600 hover:bg-amber-700 text-white px-6 py-3 rounded-full shadow-lg transition-colors flex items-center gap-2"
+        className="fixed bottom-6 bg-amber-600 hover:bg-amber-700 text-white px-6 py-3 rounded-full shadow-lg transition-colors flex items-center gap-2"
       >
         <Plus size={20} />
         Add Reward
       </button>
-
 
       {/* Reward Details Drawer */}
       <RewardDetailsDrawer
@@ -113,6 +114,7 @@ export default function Rewards() {
         setIsOpen={(open) => {
           if (!open) {
             clearSelectedReward();
+            toggleDrawer(DrawerType.REWARD_DETAILS);
           }
         }}
       />

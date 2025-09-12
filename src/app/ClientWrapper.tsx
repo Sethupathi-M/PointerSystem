@@ -1,8 +1,8 @@
 "use client";
 
-import AddIdentityDrawer from "@/components/AddIdentityDrawer";
+import AddIdentityDrawer from "@/components/Drawers/AddIdentityDrawer";
 import { CommonHeader } from "@/components/CommonHeader";
-import MainSideBar from "@/components/MainSideBar";
+import MainSideBar from "@/components/MainSideBar/MainSideBar";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React from "react";
 
@@ -19,9 +19,9 @@ const ClientWrapper = ({ children }: { children: React.ReactNode }) => {
           <MainSideBar />
 
           {/* MAIN CONTENT */}
-          <main className="flex-1 h-screen">
+          <main className="flex-1 flex flex-col h-screen">
             <CommonHeader />
-            {children}
+            <div className="flex-1 overflow-y-auto pb-12">{children}</div>
           </main>
           <AddIdentityDrawer />
         </div>

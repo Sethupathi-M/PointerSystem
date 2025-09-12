@@ -6,7 +6,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
-): Promise<void> {
+) {
   const { id } = req.query;
 
   try {
@@ -14,37 +14,37 @@ export default async function handler(
     if (id && typeof id === "string") {
       switch (req.method) {
         case "GET":
-          res.status(200).json(await identityService.getIdentityById(id));
-          return;
+          return res
+            .status(200)
+            .json(await identityService.getIdentityById(id));
         case "PUT":
-          res
+          return res
             .status(200)
             .json(await identityService.updateIdentity(id, req.body));
-          return;
         case "DELETE":
-          res.status(200).json(await identityService.deleteIdentity(id));
-          return;
+          return res.status(200).json(await identityService.deleteIdentity(id));
         default:
-          res.status(405).json({ error: `Method ${req.method} not allowed` });
-          return;
+          return res
+            .status(405)
+            .json({ error: `Method ${req.method} not allowed` });
       }
     }
 
     // Otherwise → act on collection
     switch (req.method) {
       case "GET":
-        res.status(200).json(await identityService.getAllIdentities());
-        return;
+        return res.status(200).json(await identityService.getAllIdentities());
       case "POST":
-        res.status(201).json(await identityService.createIdentity(req.body));
-        return;
+        return res
+          .status(201)
+          .json(await identityService.createIdentity(req.body));
       default:
-        res.status(405).json({ error: `Method ${req.method} not allowed` });
-        return;
+        return res
+          .status(405)
+          .json({ error: `Method ${req.method} not allowed` });
     }
   } catch (err: unknown) {
     console.error("Identity API error:", err);
-    res.status(500).json({ error: "Internal Server Error" });
-    return;
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 }

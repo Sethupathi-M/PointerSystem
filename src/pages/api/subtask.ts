@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
-): Promise<void> {
+) {
   try {
     const { method, query, body } = req;
 
@@ -18,11 +18,9 @@ export default async function handler(
             where: { parentTaskId: query.parentTaskId as string },
             orderBy: { createdAt: "asc" },
           });
-          res.status(200).json(subtasks);
-          return;
+          return res.status(200).json(subtasks);
         }
-        res.status(400).json({ error: "Parent task ID required" });
-        return;
+        return res.status(400).json({ error: "Parent task ID required" });
 
       case "POST":
         // Create a new subtask
@@ -34,15 +32,12 @@ export default async function handler(
             isAddedToToday: body.isAddedToToday ?? false,
           },
         });
-        res.status(201).json(newSubtask);
-        return;
+        return res.status(201).json(newSubtask);
 
       case "PUT":
         // Update subtask
-        if (!query.id) {
-          res.status(400).json({ error: "Subtask ID required" });
-          return;
-        }
+        if (!query.id)
+          return res.status(400).json({ error: "Subtask ID required" });
         const updatedSubtask = await prisma.subTask.update({
           where: { id: query.id as string },
           data: {
@@ -51,29 +46,23 @@ export default async function handler(
             isAddedToToday: body.isAddedToToday,
           },
         });
-        res.status(200).json(updatedSubtask);
-        return;
+        return res.status(200).json(updatedSubtask);
 
       case "DELETE":
         // Delete subtask
-        if (!query.id) {
-          res.status(400).json({ error: "Subtask ID required" });
-          return;
-        }
+        if (!query.id)
+          return res.status(400).json({ error: "Subtask ID required" });
         await prisma.subTask.delete({
           where: { id: query.id as string },
         });
-        res.status(200).json({ success: true });
-        return;
+        return res.status(200).json({ success: true });
 
       default:
         res.setHeader("Allow", ["GET", "POST", "PUT", "DELETE"]);
-        res.status(405).end(`Method ${method} Not Allowed`);
-        return;
+        return res.status(405).end(`Method ${method} Not Allowed`);
     }
   } catch (error) {
     console.error("Subtask API error:", error);
-    res.status(500).json({ error: "Internal server error" });
-    return;
+    return res.status(500).json({ error: "Internal server error" });
   }
 }

@@ -4,7 +4,7 @@ import { rewardService } from "@/lib/services/rewardService";
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
-): Promise<void> {
+) {
   try {
     const { method, query, body } = req;
 
@@ -14,31 +14,27 @@ export default async function handler(
         if (query.id) {
           const reward = await rewardService.getRewardById(query.id as string);
           if (!reward) {
-            res.status(404).json({ error: "Reward not found" });
-            return;
+            return res.status(404).json({ error: "Reward not found" });
           }
-          res.status(200).json(reward);
-          return;
+          return res.status(200).json(reward);
         } else if (query.available === "true") {
-          res.status(200).json(await rewardService.getAvailableRewards());
-          return;
+          return res
+            .status(200)
+            .json(await rewardService.getAvailableRewards());
         } else if (query.redeemed === "true") {
-          res.status(200).json(await rewardService.getRedeemedRewards());
-          return;
+          return res.status(200).json(await rewardService.getRedeemedRewards());
         } else {
-          res.status(200).json(await rewardService.getAllRewards());
-          return;
+          return res.status(200).json(await rewardService.getAllRewards());
         }
 
       case "POST":
         // Create new reward
         const { name, description, cost, imageCollection } = body;
         if (!name || !description || cost === undefined || !imageCollection) {
-          res.status(400).json({
+          return res.status(400).json({
             error:
               "Missing required fields: name, description, cost, imageCollection",
           });
-          return;
         }
         const newReward = await rewardService.createReward({
           name,
@@ -46,52 +42,43 @@ export default async function handler(
           cost,
           imageCollection,
         });
-        res.status(201).json(newReward);
-        return;
+        return res.status(201).json(newReward);
 
       case "PUT":
         // Update reward
         if (!query.id) {
-          res.status(400).json({ error: "Reward ID required" });
-          return;
+          return res.status(400).json({ error: "Reward ID required" });
         }
         const updatedReward = await rewardService.updateReward(
           query.id as string,
           body
         );
-        res.status(200).json(updatedReward);
-        return;
+        return res.status(200).json(updatedReward);
 
       case "DELETE":
         // Delete reward
         if (!query.id) {
-          res.status(400).json({ error: "Reward ID required" });
-          return;
+          return res.status(400).json({ error: "Reward ID required" });
         }
         await rewardService.deleteReward(query.id as string);
-        res.status(200).json({ success: true });
-        return;
+        return res.status(200).json({ success: true });
 
       case "PATCH":
         // Redeem reward
         if (!query.id) {
-          res.status(400).json({ error: "Reward ID required" });
-          return;
+          return res.status(400).json({ error: "Reward ID required" });
         }
         const redemptionResult = await rewardService.redeemReward(
           query.id as string
         );
-        res.status(200).json(redemptionResult);
-        return;
+        return res.status(200).json(redemptionResult);
 
       default:
         res.setHeader("Allow", ["GET", "POST", "PUT", "DELETE", "PATCH"]);
-        res.status(405).end(`Method ${method} Not Allowed`);
-        return;
+        return res.status(405).end(`Method ${method} Not Allowed`);
     }
   } catch (error) {
     console.error("Reward API error:", error);
-    res.status(500).json({ error: "Internal server error" });
-    return;
+    return res.status(500).json({ error: "Internal server error" });
   }
 }

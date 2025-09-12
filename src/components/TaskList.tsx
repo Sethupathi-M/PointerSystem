@@ -1,6 +1,6 @@
 "use client";
 import { Task as TaskType } from "@/generated/prisma";
-import { Task } from "./Task";
+import { Task } from "./Task/Task";
 import { useState, useEffect } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import {

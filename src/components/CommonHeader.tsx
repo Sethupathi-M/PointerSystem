@@ -5,6 +5,9 @@ import { identityApi } from "@/lib/api/identityApi";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { motion } from "framer-motion";
+import dynamic from "next/dynamic";
+
+const Particles = dynamic(() => import("./Particles"), { ssr: false });
 
 interface IdentityWithPoints {
   id: string;
@@ -15,7 +18,7 @@ interface IdentityWithPoints {
   createdAt: Date;
   totalAcquiredPoints: number;
 }
-  
+
 export const CommonHeader = () => {
   // Fetch all identities to calculate total earned points
   const { data: identities, isLoading } = useQuery({
@@ -39,28 +42,10 @@ export const CommonHeader = () => {
       <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900" />
       <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-emerald-500/5" />
       <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/3 via-transparent to-emerald-400/3 animate-pulse" />
-      
+
       {/* Animated Particles */}
       <div className="absolute inset-0 overflow-hidden">
-        {[...Array(100)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute w-1 h-1 bg-cyan-300/30 rounded-full"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-            }}
-            animate={{
-              y: [0, -100, 0],
-              opacity: [0, 1, 0],
-            }}
-            transition={{
-              duration: 4 + Math.random() * 3,
-              repeat: Infinity,
-              delay: Math.random() * 3,
-            }}
-          />
-        ))}
+        <Particles />
       </div>
 
       {/* Main Content */}
@@ -90,7 +75,10 @@ export const CommonHeader = () => {
         >
           <div className="px-4 py-2 rounded-lg bg-slate-800/40 border border-slate-600/30 backdrop-blur-sm">
             <div className="flex items-center gap-2">
-              <Zap className={`${isPositive ? "text-emerald-400" : "text-red-400"}`} size={16} />
+              <Zap
+                className={`${isPositive ? "text-emerald-400" : "text-red-400"}`}
+                size={16}
+              />
               <span className="text-xs text-slate-400">Total Points:</span>
               <motion.span
                 className={`text-sm font-semibold ${isPositive ? "text-emerald-300" : "text-red-300"}`}
@@ -102,8 +90,14 @@ export const CommonHeader = () => {
                 {isLoading ? (
                   <div className="flex items-center gap-1">
                     <div className="w-1 h-1 bg-slate-400 rounded-full animate-bounce" />
-                    <div className="w-1 h-1 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
-                    <div className="w-1 h-1 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                    <div
+                      className="w-1 h-1 bg-slate-400 rounded-full animate-bounce"
+                      style={{ animationDelay: "0.1s" }}
+                    />
+                    <div
+                      className="w-1 h-1 bg-slate-400 rounded-full animate-bounce"
+                      style={{ animationDelay: "0.2s" }}
+                    />
                   </div>
                 ) : (
                   totalEarnedPoints.toLocaleString()
