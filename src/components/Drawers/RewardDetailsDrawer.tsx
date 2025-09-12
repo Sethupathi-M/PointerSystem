@@ -57,7 +57,7 @@ export const RewardDetailsDrawer = ({
       reset({
         name: reward.name,
         description: reward.description,
-        cost: reward.cost,
+        cost: parseInt(reward.cost.toString()),
       });
       setImageUrls(reward.imageCollection || []);
     }
@@ -84,6 +84,7 @@ export const RewardDetailsDrawer = ({
     mutationFn: (data: RewardFormData) =>
       rewardApi.update(selectedRewardId!, {
         ...data,
+        cost: parseInt(data.cost.toString()),
         imageCollection: imageUrls,
       }),
     onSuccess: () => {
@@ -314,8 +315,8 @@ export const RewardDetailsDrawer = ({
                       message: "Cost must be at least 1 point",
                     },
                     max: {
-                      value: 100000,
-                      message: "Cost must be less than 100,000 points",
+                      value: 1000000,
+                      message: "Cost must be less than 1,000,000 points",
                     },
                   })}
                   type="number"

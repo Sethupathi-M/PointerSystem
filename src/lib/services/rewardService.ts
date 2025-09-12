@@ -6,7 +6,7 @@ export const rewardService = {
   // Get all rewards
   getAllRewards: async (): Promise<Reward[]> => {
     return prisma.reward.findMany({
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: "asc" },
     });
   },
 
@@ -93,7 +93,7 @@ export const rewardService = {
   getAvailableRewards: async (): Promise<Reward[]> => {
     return prisma.reward.findMany({
       where: { isRedeemed: false },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: "asc" },
     });
   },
 
@@ -101,7 +101,7 @@ export const rewardService = {
   getRedeemedRewards: async (): Promise<Reward[]> => {
     return prisma.reward.findMany({
       where: { isRedeemed: true },
-      orderBy: { redeemedAt: "desc" },
+      orderBy: { redeemedAt: "asc" },
     });
   },
 };
