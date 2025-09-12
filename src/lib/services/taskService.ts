@@ -3,10 +3,7 @@ import { Task, TaskType, PointsType } from "@/generated/prisma";
 
 export const taskService = {
   // Get all tasks (optionally filtered by identityId or status)
-  getAllTasks: async (
-    identityId?: string,
-    isActive?: boolean
-  ): Promise<Task[]> => {
+  getAllTasks: async (identityId?: string): Promise<Task[]> => {
     return prisma.task.findMany({
       where: {
         identityId: identityId ?? undefined,

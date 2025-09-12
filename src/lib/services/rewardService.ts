@@ -1,4 +1,4 @@
-import { Reward } from "@/generated/prisma";
+import { Reward, Task } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
 import { taskService } from "./taskService";
 
@@ -61,7 +61,7 @@ export const rewardService = {
   // Redeem a reward
   redeemReward: async (
     id: string
-  ): Promise<{ reward: Reward; lockedTasks: any[] }> => {
+  ): Promise<{ reward: Reward; lockedTasks: Task[] }> => {
     // First, get the reward to check its cost
     const reward = await prisma.reward.findUnique({
       where: { id },

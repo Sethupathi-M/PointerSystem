@@ -92,6 +92,21 @@ export const identityService = {
     return updatedIdentity;
   },
   deleteIdentity: async (id: string) => {
+    // First delete all subtasks for tasks belonging to this identity
+    await prisma.subTask.deleteMany({
+      where: {
+        parentTask: {
+          identityId: id,
+        },
+      },
+    });
+
+    // Then delete all associated tasks
+    await prisma.task.deleteMany({
+      where: { identityId: id },
+    });
+
+    // Finally delete the identity
     const deletedIdentity = await prisma.identity.delete({
       where: { id },
     });

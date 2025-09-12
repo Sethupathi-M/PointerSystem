@@ -1,11 +1,10 @@
 "use client";
 
-import { useDrawerStore } from "@/store/useDrawerStore";
 import TaskDetailsDrawer from "@/components/Drawers/TaskDetailsDrawer";
-import { DrawerType } from "@/types";
 import Identity from "@/components/Identity";
-import React, { createContext } from "react";
-import type { Identity as IdentityType } from "@/generated/prisma";
+import { useDrawerStore } from "@/store/useDrawerStore";
+import { DrawerType } from "@/types";
+import React from "react";
 
 const IdentityPage = ({ params }: { params: Promise<{ id: string }> }) => {
   const { id } = React.use(params);

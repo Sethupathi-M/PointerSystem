@@ -30,34 +30,38 @@ export const MainSideBar = () => {
       id: "my-day",
       name: "My Day",
       path: "/",
-      icon: <HomeIcon />,
+      icon: <HomeIcon className="text-blue-400" />,
       count: null,
       listType: ListType.MY_DAY,
+      accentColor: "blue",
     },
     {
       id: "favourites",
       name: "Favourites",
       path: "/favourites",
-      icon: <Star />,
+      icon: <Star className="text-amber-400" />,
       count: null,
       listType: ListType.FAVOURITES,
+      accentColor: "amber",
     },
     {
       id: "rewards",
       name: "Rewards",
       path: "/rewards",
-      icon: <Gift />,
+      icon: <Gift className="text-emerald-400" />,
       count: null,
       listType: ListType.REWARDS,
+      accentColor: "emerald",
     },
     ...(data
       ? data.map((identity) => ({
           id: identity.id,
           name: identity.name,
           path: `/identity/${identity.id}`,
-          icon: <List />,
+          icon: <List className="text-purple-400" />,
           count: (identity as any)?._count?.Task ?? null,
           listType: ListType.IDENTITY,
+          accentColor: "purple",
         }))
       : []),
   ];
@@ -68,22 +72,28 @@ export const MainSideBar = () => {
         initial={false}
         animate={{ width: isOpen ? 280 : 80 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className="sticky h-screen border-r border-zinc-700 bg-zinc-800"
+        className="sticky h-screen border-r border-slate-700/50 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900"
         aria-label="Sidebar navigation"
       >
-        <div className="relative flex items-center justify-end border-b border-zinc-700 p-3">
+        {/* Subtle gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/3 via-purple-500/3 to-emerald-500/3" />
+
+        <div className="relative flex items-center justify-end border-b border-slate-700/50 p-3 bg-slate-900/20 backdrop-blur-sm">
           <button
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-white hover:bg-zinc-700 transition-colors"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-200 hover:bg-slate-700/50 transition-all duration-200 backdrop-blur-sm"
             onClick={() => setIsOpen(!isOpen)}
             aria-label={isOpen ? "Collapse sidebar" : "Expand sidebar"}
           >
             {isOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
           </button>
         </div>
-        <div className="overflow-y-auto w-full justify-between flex flex-col">
-          <nav className="flex flex-col gap-1 p-2">
+
+        <div className="overflow-y-auto w-full justify-between flex flex-col relative z-10">
+          <nav className="flex flex-col gap-1 p-3 overflow-hidden">
             {isLoading ? (
-              <Spinner />
+              <div className="flex justify-center py-8">
+                <Spinner />
+              </div>
             ) : (
               navItems?.map((navItem) => (
                 <NavItem
@@ -94,6 +104,7 @@ export const MainSideBar = () => {
                   count={navItem.count ?? null}
                   compact={!isOpen}
                   listType={navItem.listType}
+                  accentColor={navItem.accentColor || "slate"}
                 />
               ))
             )}
@@ -101,13 +112,16 @@ export const MainSideBar = () => {
         </div>
 
         <button
-          className="bg-zinc-950 cursor-pointer hover:bg-neutral-900 absolute bottom-0 w-full"
+          className="relative bg-gradient-to-r from-slate-800 to-slate-900/80 hover:from-slate-700 hover:to-slate-800/80 border-t border-slate-700/50 backdrop-blur-sm transition-all duration-200 bottom-0 w-full group"
           onClick={() => openDrawer(DrawerType.ADD_IDENTITY)}
         >
-          <div className="font-bold flex items-center gap-2 p-3 w-full justify-center">
-            <MapPlus size={25} />
+          <div className="font-bold flex items-center gap-3 p-4 w-full justify-center text-slate-200 group-hover:text-slate-100 transition-colors">
+            <MapPlus
+              size={24}
+              className="group-hover:scale-110 transition-transform duration-200"
+            />
             {isOpen && (
-              <span className="text-ellipsis duration-200 h-full">
+              <span className="text-ellipsis duration-200 whitespace-nowrap">
                 Add Identity
               </span>
             )}

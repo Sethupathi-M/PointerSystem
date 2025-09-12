@@ -40,22 +40,13 @@ export default async function handler(
           );
           return;
         } else {
-          const { identityId, isActive } = query;
-          console.log({ identityId, isActive });
+          const { identityId } = query;
+          console.log({ identityId });
 
           // Fix: Return the correct type for an array of tasks
           res
             .status(200)
-            .json(
-              await taskService.getAllTasks(
-                identityId as string,
-                isActive === "true"
-                  ? true
-                  : isActive === "false"
-                    ? false
-                    : undefined
-              )
-            );
+            .json(await taskService.getAllTasks(identityId as string));
           return;
         }
 
@@ -255,10 +246,7 @@ export default async function handler(
         }
 
         // Use taskService for updates to handle counter task completion logic
-        const updatedTask = await taskService.updateTask(
-          query.id as string,
-          updateData
-        );
+        await taskService.updateTask(query.id as string, updateData);
 
         // Fetch the updated task with all relations
         const taskWithRelations = await prisma.task.findUnique({

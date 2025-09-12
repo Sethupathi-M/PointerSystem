@@ -7,14 +7,12 @@ export interface IReward {
   isLocked: boolean;
 }
 
-
 export enum ListType {
   MY_DAY = "my-day",
   FAVOURITES = "favourites",
   IDENTITY = "identity",
   REWARDS = "rewards",
 }
-
 
 export enum DrawerType {
   REWARD_DETAILS = "rewardDetails",
@@ -27,7 +25,7 @@ export interface IdentityItem {
   title: string;
   description: string;
   requiredPoints: number;
-} 
+}
 
 enum TaskType {
   Default = 0,
@@ -42,7 +40,6 @@ export interface TaskItemPayload {
   defaultPoints: number;
 }
 
-
 export interface INavItem {
   id: string;
   name: string;
@@ -50,4 +47,5 @@ export interface INavItem {
   icon: React.ReactNode;
   count: number | null;
   listType: ListType;
+  accentColor?: string;
 }

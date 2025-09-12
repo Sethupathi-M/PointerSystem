@@ -3,6 +3,10 @@
 :root {
   --background: #ffffff;
   --foreground: #ffffff;
+  --blue-color: 59 130 246;
+  --amber-color: 251 191 36;
+  --emerald-color: 16 185 129;
+  --purple-color: 168 85 247;
 }
 
 body {

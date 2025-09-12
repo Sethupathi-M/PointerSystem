@@ -1,10 +1,8 @@
 "use client";
 import { SubTask } from "@/generated/prisma";
-import { subtaskApi } from "@/lib/api/subtaskApi";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { Plus, X } from "lucide-react";
-import { useState, useRef } from "react";
+import { useRef, useState } from "react";
 import { SubTaskItem } from "./SubTaskItem";
 
 interface SubTaskListProps {
@@ -17,16 +15,13 @@ interface SubTaskListProps {
 }
 
 export const SubTaskList = ({
-  parentTaskId,
   subtasks,
   isExpanded,
-  onToggle,
   onAddSubtask,
 }: SubTaskListProps) => {
   const [newSubtaskName, setNewSubtaskName] = useState("");
   const [isAdding, setIsAdding] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const queryClient = useQueryClient();
 
   const handleAddSubtask = () => {
     if (newSubtaskName.trim() && onAddSubtask) {
