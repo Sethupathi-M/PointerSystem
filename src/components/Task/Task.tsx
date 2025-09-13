@@ -24,13 +24,13 @@ type TaskWithCounter = TaskType & {
   sortValue?: number;
 };
 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useOptimisticTaskMutation } from "@/hooks/useOptimisticMutation";
 import { taskApi } from "@/lib/api/taskApi";
 import { useDrawerStore } from "@/store/useDrawerStore";
 import { useSelectedTaskStore } from "@/store/useSelectedTaskStore";
 import { DrawerType } from "@/types";
 import { TrashIcon } from "@heroicons/react/24/outline";
-import { useQuery } from "@tanstack/react-query";
 import {
   ChevronDown,
   ChevronRight,
@@ -70,6 +70,62 @@ export const Task = ({
     queryFn: () => subtaskApi.getByParentTask(task.id),
     enabled: !!task.id,
   });
+
+  const queryClient = useQueryClient();
+
+  // Subtask creation mutation
+  const createSubtaskMutation = useMutation({
+    mutationFn: ({
+      parentTaskId,
+      name,
+    }: {
+      parentTaskId: string;
+      name: string;
+    }) => subtaskApi.create({ parentTaskId, name }),
+    onMutate: async (newSubtaskData) => {
+      await queryClient.cancelQueries({
+        queryKey: ["subtask", newSubtaskData.parentTaskId],
+      });
+      const previousSubtasks = queryClient.getQueryData([
+        "subtask",
+        newSubtaskData.parentTaskId,
+      ]);
+
+      const newSubtask: SubTask = {
+        id: `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        name: newSubtaskData.name,
+        isActive: false,
+        isAddedToToday: false,
+        parentTaskId: newSubtaskData.parentTaskId,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      queryClient.setQueryData(
+        ["subtask", newSubtaskData.parentTaskId],
+        (old: SubTask[] = []) => [...old, newSubtask]
+      );
+
+      return { previousSubtasks, parentTaskId: newSubtaskData.parentTaskId };
+    },
+    onError: (err, newSubtaskData, context) => {
+      if (context?.previousSubtasks) {
+        queryClient.setQueryData(
+          ["subtask", context.parentTaskId],
+          context.previousSubtasks
+        );
+      }
+    },
+    onSettled: (data, error, newSubtaskData) => {
+      queryClient.invalidateQueries({
+        queryKey: ["subtask", newSubtaskData.parentTaskId],
+      });
+    },
+  });
+
+  const addSubtask = (name: string) => {
+    createSubtaskMutation.mutate({ parentTaskId: task.id, name });
+  };
 
   // Sync local state with task prop changes
   useEffect(() => {
@@ -234,10 +290,6 @@ export const Task = ({
           openDrawer(DrawerType.TASK_DETAILS);
         }}
       >
-        {/* Subtle Background Effects */}
-        {/* <div className="absolute inset-0 bg-gradient-to-r from-blue-500/2 via-purple-500/2 to-emerald-500/2 opacity-0 group-hover:opacity-100 transition-opacity duration-500" /> */}
-        {/* <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/3 via-transparent to-emerald-400/3 animate-pulse" /> */}
-
         {/* Lock indicator for locked tasks */}
         {task.isLocked && (
           <div className="absolute top-3 right-3 z-20">
@@ -416,50 +468,51 @@ export const Task = ({
               />
             </div>
           </div>
+
+          {/* Bottom Progress Bar for Counter Tasks */}
+          {task.taskType === TaskTypeEnum.COUNTER && task.counterTask && (
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-700/50">
+              <div
+                className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-emerald-500 transition-all duration-500"
+                style={{
+                  width: `${Math.min(100, (task.counterTask.count / task.counterTask.target) * 100)}%`,
+                }}
+              />
+            </div>
+          )}
+
+          {/* Bottom Progress Bar for Tasks with Subtasks */}
+          {subtasks.length > 0 && (
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-700/50">
+              <div
+                className="h-full bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 transition-all duration-500"
+                style={{
+                  width: `${Math.min(100, (subtasks.filter((subtask) => subtask.isActive).length / subtasks.length) * 100)}%`,
+                }}
+              />
+            </div>
+          )}
+
+          {/* Subtle Hover Glow Effect */}
+          <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-cyan-500/0 via-blue-500/0 to-purple-500/0 group-hover:from-cyan-500/2 group-hover:via-blue-500/2 group-hover:to-purple-500/2 transition-all duration-500 pointer-events-none" />
         </div>
 
-        {/* Bottom Progress Bar for Counter Tasks */}
-        {task.taskType === TaskTypeEnum.COUNTER && task.counterTask && (
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-700/50">
-            <div
-              className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-emerald-500 transition-all duration-500"
-              style={{
-                width: `${Math.min(100, (task.counterTask.count / task.counterTask.target) * 100)}%`,
-              }}
+        {/* Subtask List */}
+        {subtasks.length > 0 && showSubtasks && (
+          <div className="mt-2 ml-6">
+            <SubTaskList
+              parentTaskId={task.id}
+              subtasks={subtasks}
+              isExpanded={showSubtasks}
+              onToggle={() => setShowSubtasks(!showSubtasks)}
+              onAddSubtask={addSubtask}
+              onEditSubtask={(subtask) =>
+                console.log("Edit subtask in task:", subtask)
+              }
             />
           </div>
         )}
-
-        {/* Bottom Progress Bar for Tasks with Subtasks */}
-        {subtasks.length > 0 && (
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-700/50">
-            <div
-              className="h-full bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 transition-all duration-500"
-              style={{
-                width: `${Math.min(100, (subtasks.filter((subtask) => subtask.isActive).length / subtasks.length) * 100)}%`,
-              }}
-            />
-          </div>
-        )}
-
-        {/* Subtle Hover Glow Effect */}
-        <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-cyan-500/0 via-blue-500/0 to-purple-500/0 group-hover:from-cyan-500/2 group-hover:via-blue-500/2 group-hover:to-purple-500/2 transition-all duration-500 pointer-events-none" />
       </div>
-
-      {/* Subtask List */}
-      {subtasks.length > 0 && (
-        <div className="mt-2 ml-6">
-          <SubTaskList
-            parentTaskId={task.id}
-            subtasks={subtasks}
-            isExpanded={showSubtasks}
-            onToggle={() => setShowSubtasks(!showSubtasks)}
-            onEditSubtask={(subtask) =>
-              console.log("Edit subtask in task:", subtask)
-            }
-          />
-        </div>
-      )}
     </div>
   );
 };

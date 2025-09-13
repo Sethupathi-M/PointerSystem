@@ -39,8 +39,11 @@ export default async function handler(
 
       case "PUT":
         // Update subtask
-        if (!query.id) res.status(400).json({ error: "Subtask ID required" });
-        return;
+        if (!query.id) {
+          res.status(400).json({ error: "Subtask ID required" });
+          return;
+        }
+
         const updatedSubtask = await prisma.subTask.update({
           where: { id: query.id as string },
           data: {
@@ -54,8 +57,10 @@ export default async function handler(
 
       case "DELETE":
         // Delete subtask
-        if (!query.id) res.status(400).json({ error: "Subtask ID required" });
-        return;
+        if (!query.id) {
+          res.status(400).json({ error: "Subtask ID required" });
+          return;
+        }
         await prisma.subTask.delete({
           where: { id: query.id as string },
         });

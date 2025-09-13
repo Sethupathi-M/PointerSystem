@@ -53,7 +53,12 @@ export const SubTaskList = ({
                 <input
                   type="text"
                   value={newSubtaskName}
-                  onChange={(e) => setNewSubtaskName(e.target.value)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
+                  onChange={(e) => {
+                    setNewSubtaskName(e.target.value);
+                  }}
                   placeholder="Enter subtask name"
                   className="flex-1 px-2 py-1 bg-slate-600 border border-slate-500 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   autoFocus
@@ -92,7 +97,10 @@ export const SubTaskList = ({
             ) : (
               <button
                 type="button"
-                onClick={() => setIsAdding(true)}
+                onClick={(e) => {
+                  setIsAdding(true);
+                  e.stopPropagation();
+                }}
                 className="flex items-center gap-2 w-full p-2 text-slate-400 hover:text-white hover:bg-slate-700/30 rounded-lg transition-colors duration-200"
                 aria-label="Add new subtask"
               >

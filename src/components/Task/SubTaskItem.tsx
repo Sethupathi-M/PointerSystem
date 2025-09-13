@@ -150,11 +150,15 @@ export const SubTaskItem = ({ subtask, onEdit }: SubTaskItemProps) => {
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
-      className="flex items-center gap-2 p-2 bg-slate-700/30 rounded-lg border border-slate-600/30 hover:bg-slate-700/50 transition-colors duration-200"
+      className="flex items-center gap-2 p-2 bg-slate-700/30 rounded-lg border border-slate-600/30 hover:bg-slate-700/50 transition-colors duration-200 cursor-default"
+      onClick={(e) => e.stopPropagation()}
     >
       {/* Checkbox */}
       <button
-        onClick={handleToggle}
+        onClick={(e) => {
+          e.stopPropagation();
+          handleToggle();
+        }}
         className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-200 ${
           subtask.isActive
             ? "bg-emerald-500 border-emerald-500 text-white"
@@ -178,17 +182,25 @@ export const SubTaskItem = ({ subtask, onEdit }: SubTaskItemProps) => {
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleSave();
                 if (e.key === "Escape") handleCancel();
+                e.stopPropagation();
               }}
+              onClick={(e) => e.stopPropagation()}
             />
             <button
-              onClick={handleSave}
+              onClick={(e) => {
+                handleSave();
+                e.stopPropagation();
+              }}
               className="p-1 text-emerald-400 hover:text-emerald-300 transition-colors"
               aria-label="Save subtask"
             >
               <Check size={14} />
             </button>
             <button
-              onClick={handleCancel}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleCancel();
+              }}
               className="p-1 text-red-400 hover:text-red-300 transition-colors"
               aria-label="Cancel editing"
             >
@@ -200,6 +212,7 @@ export const SubTaskItem = ({ subtask, onEdit }: SubTaskItemProps) => {
             className={`text-sm transition-all duration-200 ${
               subtask.isActive ? "line-through text-slate-400" : "text-white"
             }`}
+            onClick={(e) => e.stopPropagation()}
           >
             {subtask.name}
           </div>
@@ -210,7 +223,8 @@ export const SubTaskItem = ({ subtask, onEdit }: SubTaskItemProps) => {
       {!isEditing && (
         <div className="flex items-center gap-1">
           <button
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               setIsEditing(true);
               onEdit?.(subtask);
             }}
@@ -220,7 +234,10 @@ export const SubTaskItem = ({ subtask, onEdit }: SubTaskItemProps) => {
             <Edit2 size={14} />
           </button>
           <button
-            onClick={handleDelete}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDelete();
+            }}
             className="p-1 text-slate-400 hover:text-red-400 transition-colors"
             aria-label="Delete subtask"
           >
