@@ -1,8 +1,10 @@
 "use client";
-import { Crown } from "lucide-react";
+import { Crown, LogOut } from "lucide-react";
 import { HeaderProgressBar } from "./HeaderProgressBar";
 import PointsBadge from "./PointsBadge";
 import LevelBadge from "./LevelBadge";
+import { IconButton } from "../IconButton";
+import { useIdentityContext } from "../IdentityContext";
 
 interface HeaderProps {
   name: string;
@@ -15,7 +17,12 @@ export const Header = ({
   requiredPoints,
   gainedPoints = 0,
 }: HeaderProps) => {
+  const { logout } = useIdentityContext();
   const netPoints = gainedPoints;
+
+  const handleLogout = () => {
+    logout();
+  };
 
   // Calculate current level based on how much user exceeded required points
   const calculateCurrentLevel = () => {
@@ -67,6 +74,12 @@ export const Header = ({
               requiredPoints={requiredPoints}
             />
             <LevelBadge currentLevel={currentLevel} />
+            <IconButton
+              icon={<LogOut size={18} />}
+              onClick={handleLogout}
+              aria-label="Logout"
+              className="hover:bg-red-500/20 hover:text-red-400 transition-colors"
+            />
           </div>
         </div>
 

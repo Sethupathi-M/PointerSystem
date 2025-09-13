@@ -1,8 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+"use client";
+
 import { identityApi } from "@/lib/api/identityApi";
 import { useDrawerStore } from "@/store/useDrawerStore";
 import { useMainSideBar } from "@/store/useMainSideBar";
 import { DrawerType, INavItem, ListType } from "@/types";
+import { useIdentityContext } from "../IdentityContext";
 import { useQuery } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -20,12 +23,13 @@ import Spinner from "../Spinner";
 export const MainSideBar = () => {
   const { isOpen, setIsOpen } = useMainSideBar();
   const { openDrawer } = useDrawerStore();
+  const { isLoggedIn } = useIdentityContext();
   const { data, isLoading } = useQuery({
     queryKey: ["identity"],
     queryFn: () => identityApi.getAll(),
   });
 
-  const navItems: INavItem[] = [
+  const baseNavItems: INavItem[] = [
     {
       id: "my-day",
       name: "My Day",
@@ -53,18 +57,23 @@ export const MainSideBar = () => {
       listType: ListType.REWARDS,
       accentColor: "emerald",
     },
-    ...(data
-      ? data.map((identity) => ({
-          id: identity.id,
-          name: identity.name,
-          path: `/identity/${identity.id}`,
-          icon: <List className="text-purple-400" />,
-          count: (identity as any)?._count?.Task ?? null,
-          listType: ListType.IDENTITY,
-          accentColor: "purple",
-        }))
-      : []),
   ];
+
+  const identityNavItems: INavItem[] = data
+    ? data.map((identity) => ({
+        id: identity.id,
+        name: identity.name,
+        path: `/identity/${identity.id}`,
+        icon: <List className="text-purple-400" />,
+        count: (identity as any)?._count?.Task ?? null,
+        listType: ListType.IDENTITY,
+        accentColor: "purple",
+      }))
+    : [];
+
+  const navItems: INavItem[] = isLoggedIn
+    ? [...baseNavItems, ...identityNavItems]
+    : baseNavItems.filter((item) => item.listType !== ListType.IDENTITY);
 
   return (
     <AnimatePresence initial={false}>
