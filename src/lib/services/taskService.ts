@@ -3,10 +3,14 @@ import { Task, TaskType, PointsType } from "@/generated/prisma";
 
 export const taskService = {
   // Get all tasks (optionally filtered by identityId or status)
-  getAllTasks: async (identityId?: string): Promise<Task[]> => {
+  getAllTasks: async (
+    identityId?: string,
+    includeBacklog: boolean = false
+  ): Promise<Task[]> => {
     return prisma.task.findMany({
       where: {
         identityId: identityId ?? undefined,
+        ...(includeBacklog ? {} : { isBacklog: false }),
       },
       include: {
         SubTask: true,
@@ -47,6 +51,7 @@ export const taskService = {
     pointsType: PointsType;
     taskType?: TaskType;
     isFavorited?: boolean;
+    isBacklog?: boolean;
   }): Promise<Task> => {
     return prisma.task.create({
       data: {
@@ -56,6 +61,7 @@ export const taskService = {
         pointsType: data.pointsType,
         taskType: data.taskType ?? TaskType.DEFAULT,
         isFavorited: data.isFavorited ?? false,
+        isBacklog: data.isBacklog ?? false,
       },
     });
   },
@@ -68,6 +74,7 @@ export const taskService = {
       isFavorited: boolean;
       isActive: boolean;
       isAddedToToday: boolean;
+      isBacklog: boolean;
       points: number;
       pointsType: PointsType;
     }>

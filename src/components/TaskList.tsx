@@ -2,7 +2,7 @@
 import { Task as TaskType } from "@/generated/prisma";
 import { Task } from "./Task/Task";
 import { useState, useEffect } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Archive } from "lucide-react";
 import {
   DndContext,
   closestCenter,
@@ -22,6 +22,9 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { taskApi } from "@/lib/api/taskApi";
 import { useMutation } from "@tanstack/react-query";
+
+// Extend Task type to include isBacklog (until Prisma schema is updated)
+type TaskWithBacklog = TaskType & { isBacklog?: boolean };
 
 // Sortable Task Item Component
 const SortableTaskItem = ({ task }: { task: TaskType }) => {
@@ -47,17 +50,21 @@ const SortableTaskItem = ({ task }: { task: TaskType }) => {
   );
 };
 
-export const TaskList = ({ tasks }: { tasks: TaskType[] }) => {
+export const TaskList = ({ tasks }: { tasks: TaskWithBacklog[] }) => {
   const [isCompletedOpen, setIsCompletedOpen] = useState(false);
-  const [localTasks, setLocalTasks] = useState<TaskType[]>(tasks);
+  const [isBacklogOpen, setIsBacklogOpen] = useState(false);
+  const [localTasks, setLocalTasks] = useState<TaskWithBacklog[]>(tasks);
 
   // Update local tasks when props change
   useEffect(() => {
     setLocalTasks(tasks);
   }, [tasks]);
 
-  // Separate active and completed tasks
-  const activeTasks = localTasks.filter((task) => task.isActive);
+  // Separate tasks into active, backlog, and completed
+  const activeTasks = localTasks.filter(
+    (task) => task.isActive && !task.isBacklog
+  );
+  const backlogTasks = localTasks.filter((task) => task.isBacklog);
   const completedTasks = localTasks.filter((task) => !task.isActive);
 
   // Sort active tasks by pinned status and sortValue
@@ -156,6 +163,36 @@ export const TaskList = ({ tasks }: { tasks: TaskType[] }) => {
           </div>
         </SortableContext>
       </DndContext>
+
+      {/* Backlog Tasks Accordion */}
+      {backlogTasks.length > 0 && (
+        <div className="mt-6 border-t border-zinc-700 pt-4">
+          <button
+            onClick={() => setIsBacklogOpen(!isBacklogOpen)}
+            className="flex items-center gap-2 w-full text-left text-zinc-400 hover:text-zinc-300 transition-colors py-2 group"
+          >
+            <div className="transition-transform duration-200 group-hover:scale-110">
+              {isBacklogOpen ? (
+                <ChevronDown size={16} />
+              ) : (
+                <ChevronRight size={16} />
+              )}
+            </div>
+            <Archive size={16} className="text-yellow-400" />
+            <span className="text-sm font-medium tracking-wide">
+              Backlog ({backlogTasks.length})
+            </span>
+          </button>
+
+          {isBacklogOpen && (
+            <div className="ml-6 mt-3 space-y-2 animate-in slide-in-from-top-2 duration-200">
+              {backlogTasks.map((task) => (
+                <Task key={task.id} task={task} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Completed Tasks Accordion */}
       {completedTasks.length > 0 && (

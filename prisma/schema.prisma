@@ -52,6 +52,7 @@ model Task {
   isActive Boolean @default(true)
   isAddedToToday Boolean @default(false)
   isLocked Boolean @default(false)
+  isBacklog Boolean @default(false)
   isPinned Boolean @default(false)
   sortValue Int @default(0)
   createdAt DateTime @default(now())

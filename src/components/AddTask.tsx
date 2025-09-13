@@ -1,20 +1,39 @@
 import { PointsType, Task, TaskType } from "@/generated/prisma";
 import { taskApi } from "@/lib/api/taskApi";
 import { useQueryClient } from "@tanstack/react-query";
-import { SendHorizonalIcon } from "lucide-react";
+import { SendHorizonalIcon, Archive, ArchiveX } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { IconButton } from "./IconButton";
 import PointsInput from "./PointsInput";
 import { useOptimisticMutation } from "@/hooks/useOptimisticMutation";
+import { useState, useEffect } from "react";
 
 type FormValues = {
   taskName: string;
   points: number;
   pointsType: PointsType;
+  isBacklog: boolean;
 };
 
 export const AddTask = ({ identityId }: { identityId: string }) => {
   const queryClient = useQueryClient();
+
+  const [isBacklogMode, setIsBacklogMode] = useState(false);
+
+  // Persist backlog mode to localStorage
+  useEffect(() => {
+    const savedMode = localStorage.getItem(`backlogMode_${identityId}`);
+    if (savedMode !== null) {
+      setIsBacklogMode(JSON.parse(savedMode));
+    }
+  }, [identityId]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      `backlogMode_${identityId}`,
+      JSON.stringify(isBacklogMode)
+    );
+  }, [isBacklogMode, identityId]);
 
   const { register, handleSubmit, reset, setValue, watch } =
     useForm<FormValues>({
@@ -22,6 +41,7 @@ export const AddTask = ({ identityId }: { identityId: string }) => {
         taskName: "",
         points: 100,
         pointsType: PointsType.POSITIVE,
+        isBacklog: false,
       },
     });
 
@@ -90,6 +110,7 @@ export const AddTask = ({ identityId }: { identityId: string }) => {
       isFavorited: false,
       isActive: true,
       isAddedToToday: false,
+      isBacklog: isBacklogMode,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -122,6 +143,31 @@ export const AddTask = ({ identityId }: { identityId: string }) => {
             setPointsType={(val) => setValue("pointsType", val)}
           />
         </div>
+
+        {/* Backlog Toggle Button */}
+        <button
+          type="button"
+          onClick={() => setIsBacklogMode(!isBacklogMode)}
+          className={`flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 border-2 font-medium text-sm ${
+            isBacklogMode
+              ? "bg-gray-600/50 border-gray-400 text-gray-200 hover:bg-gray-500/50"
+              : "bg-transparent border-gray-500/50 text-gray-400 hover:border-gray-400 hover:text-gray-300"
+          }`}
+          aria-label={`Toggle backlog mode ${isBacklogMode ? "on" : "off"}`}
+        >
+          {isBacklogMode ? (
+            <>
+              <Archive className="size-4" />
+              <span>Backlog</span>
+            </>
+          ) : (
+            <>
+              <ArchiveX className="size-4" />
+              <span>Backlog</span>
+            </>
+          )}
+        </button>
+
         <IconButton
           type="submit"
           icon={<SendHorizonalIcon className="size-6" />}

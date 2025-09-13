@@ -8,7 +8,7 @@ import {
 import { subtaskApi } from "@/lib/api/subtaskApi";
 import { SubTaskList } from "./SubTaskList";
 
-// Extended task type with counter relation
+// Extended task type with counter relation and backlog
 type TaskWithCounter = TaskType & {
   counterTask?:
     | (CounterTask & {
@@ -22,6 +22,7 @@ type TaskWithCounter = TaskType & {
   SubTask?: SubTask[];
   isPinned?: boolean;
   sortValue?: number;
+  isBacklog?: boolean;
 };
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -38,6 +39,8 @@ import {
   Pin,
   PinOff,
   Star,
+  Archive,
+  ArchiveX,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { IconButton } from "../IconButton";
@@ -265,6 +268,43 @@ export const Task = ({
     }
   };
 
+  // Optimistic backlog toggle using the custom hook
+  const {
+    mutation: backlogMutation,
+    createOptimisticUpdate: createBacklogUpdate,
+    rollbackQueries: rollbackBacklog,
+  } = useOptimisticTaskMutation(
+    (id: string) =>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      taskApi.update(id, { isBacklog: !(task.isBacklog ?? false) } as any),
+    task.identityId
+  );
+
+  const toggleBacklog = async (id: string) => {
+    const newBacklogState = !(task.isBacklog ?? false);
+    const updateTask = createBacklogUpdate<TaskWithCounter[]>((tasks) =>
+      tasks?.map((t) =>
+        t.id === id ? { ...t, isBacklog: newBacklogState } : t
+      )
+    );
+
+    const context = {
+      previous_task: updateTask(["task"]),
+      previous_today_task: updateTask(["today", "task"]),
+      [`previous_task_${task.identityId}`]: updateTask([
+        "task",
+        task.identityId,
+      ]),
+    };
+
+    try {
+      await backlogMutation.mutateAsync(id);
+    } catch (error) {
+      rollbackBacklog(context);
+      console.error("Failed to toggle backlog:", error);
+    }
+  };
+
   const accumulatedPoints = useMemo(() => {
     return (
       task?.counterTask?.CounterDayPoints?.reduce(
@@ -430,6 +470,32 @@ export const Task = ({
                   disabled={task.isLocked}
                 />
               </div>
+
+              {/* Backlog Badge/Toggle */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (!task.isLocked) {
+                    toggleBacklog(task.id);
+                  }
+                }}
+                disabled={task.isLocked}
+                className={`flex-shrink-0 p-1 rounded transition-all duration-200 ${
+                  task.isBacklog
+                    ? "bg-yellow-500/20 text-yellow-300 border border-yellow-400/30 hover:bg-yellow-500/30"
+                    : "text-slate-400 hover:text-slate-300 hover:bg-slate-700/50"
+                } ${task.isLocked ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                aria-label={`Toggle backlog status: ${task.isBacklog ? "Remove from backlog" : "Add to backlog"}`}
+                title={
+                  task.isBacklog ? "Remove from backlog" : "Add to backlog"
+                }
+              >
+                {task.isBacklog ? (
+                  <Archive className="size-8" />
+                ) : (
+                  <ArchiveX className="size-8" />
+                )}
+              </button>
 
               <IconButton
                 icon={

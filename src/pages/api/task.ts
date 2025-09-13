@@ -43,6 +43,26 @@ export default async function handler(
               where: {
                 isActive: true,
                 isAddedToToday: true,
+                isBacklog: false,
+              },
+              include: {
+                SubTask: true,
+                counterTask: {
+                  include: {
+                    CounterDayPoints: true,
+                  },
+                },
+              },
+            })
+          );
+          return;
+        } else if (query.isBacklog) {
+          const { identityId } = query;
+          res.status(200).json(
+            await prisma.task.findMany({
+              where: {
+                isBacklog: true,
+                identityId: identityId as string,
               },
               include: {
                 SubTask: true,
@@ -62,7 +82,7 @@ export default async function handler(
           // Fix: Return the correct type for an array of tasks
           res
             .status(200)
-            .json(await taskService.getAllTasks(identityId as string));
+            .json(await taskService.getAllTasks(identityId as string, true));
           return;
         }
 
@@ -74,6 +94,7 @@ export default async function handler(
           isFavorited: boolean;
           isActive: boolean;
           isAddedToToday: boolean;
+          isBacklog: boolean;
           points: number;
           pointsType: PointsType;
           identityId: string;
@@ -83,8 +104,9 @@ export default async function handler(
             ? (body.taskType as TaskType)
             : TaskType.DEFAULT,
           isFavorited: body.isFavorited ?? false,
-          isActive: body.isActive ?? false,
+          isActive: body.isActive ?? true,
           isAddedToToday: body.isAddedToToday ?? false,
+          isBacklog: body.isBacklog ?? false,
           points: body.points,
           pointsType: body.pointsType as PointsType,
           identityId: body.identityId,
@@ -231,6 +253,11 @@ export default async function handler(
         }
 
         const updateData: Record<string, unknown> = { ...body };
+
+        // Handle isBacklog update explicitly
+        if (body.isBacklog !== undefined) {
+          updateData.isBacklog = body.isBacklog;
+        }
 
         // Remove counter-specific fields from task update
         delete updateData.counterTarget;
