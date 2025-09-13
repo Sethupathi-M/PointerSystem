@@ -9,14 +9,17 @@ interface ProgressButtonProps {
   disabled?: boolean;
 }
 
-export const ProgressButton = ({ 
-  currentPoints, 
-  requiredPoints, 
-  isRedeemed = false, 
-  onClick, 
-  disabled = false 
+export const ProgressButton = ({
+  currentPoints,
+  requiredPoints,
+  isRedeemed = false,
+  onClick,
+  disabled = false,
 }: ProgressButtonProps) => {
-  const progressPercentage = Math.min((currentPoints / requiredPoints) * 100, 100);
+  const progressPercentage = Math.min(
+    (currentPoints / requiredPoints) * 100,
+    100
+  );
   const pointsNeeded = Math.max(requiredPoints - currentPoints, 0);
   const isAffordable = currentPoints >= requiredPoints;
 
@@ -25,9 +28,10 @@ export const ProgressButton = ({
       return {
         text: "Redeemed",
         icon: <Star size={16} />,
-        className: "bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 text-white shadow-green-500/30",
+        className:
+          "bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 text-white shadow-green-500/30",
         glow: "shadow-green-500/20",
-        disabled: true
+        disabled: true,
       };
     }
 
@@ -35,9 +39,10 @@ export const ProgressButton = ({
       return {
         text: "Redeem Now!",
         icon: <Zap size={16} />,
-        className: "bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-amber-500/30",
+        className:
+          "bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-amber-500/30",
         glow: "shadow-amber-500/20",
-        disabled: false
+        disabled: false,
       };
     }
 
@@ -45,18 +50,20 @@ export const ProgressButton = ({
       return {
         text: `Almost There! (${pointsNeeded} left)`,
         icon: <TrendingUp size={16} />,
-        className: "bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white shadow-blue-500/30",
+        className:
+          "bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white shadow-blue-500/30",
         glow: "shadow-blue-500/20",
-        disabled: true
+        disabled: true,
       };
     }
 
     return {
       text: `${pointsNeeded} points needed`,
       icon: <Lock size={16} />,
-      className: "bg-gradient-to-r from-zinc-600 to-zinc-700 hover:from-zinc-700 hover:to-zinc-800 text-zinc-300 shadow-zinc-500/20",
+      className:
+        "bg-gradient-to-r from-zinc-600 to-zinc-700 hover:from-zinc-700 hover:to-zinc-800 text-zinc-300 shadow-zinc-500/20",
       glow: "shadow-zinc-500/10",
-      disabled: true
+      disabled: true,
     };
   };
 
@@ -71,10 +78,12 @@ export const ProgressButton = ({
         e.stopPropagation();
       }}
       disabled={disabled || config.disabled}
-      className={`relative overflow-hidden rounded-lg px-4 py-3 font-semibold text-sm transition-all duration-300 flex items-center justify-center gap-2 min-w-[140px] ${
+      className={`relative overflow-hidden rounded-lg px-4 py-3 font-semibold text-sm transition-all duration-300 flex items-center justify-center gap-2 w-full ${
         config.className
       } ${config.glow} ${
-        (disabled || config.disabled) ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer hover:scale-105'
+        disabled || config.disabled
+          ? "opacity-70 cursor-not-allowed"
+          : "cursor-pointer hover:scale-105"
       }`}
       whileHover={!disabled && !config.disabled ? { scale: 1.05 } : {}}
       whileTap={!disabled && !config.disabled ? { scale: 0.95 } : {}}
@@ -88,7 +97,7 @@ export const ProgressButton = ({
           transition={{
             duration: 2,
             repeat: Infinity,
-            ease: "easeInOut"
+            ease: "easeInOut",
           }}
         />
       )}
@@ -107,14 +116,18 @@ export const ProgressButton = ({
 
       {/* Icon with Animation */}
       <motion.div
-        animate={isAffordable && !isRedeemed ? {
-          rotate: [0, -10, 10, -10, 0],
-          scale: [1, 1.1, 1]
-        } : {}}
+        animate={
+          isAffordable && !isRedeemed
+            ? {
+                rotate: [0, -10, 10, -10, 0],
+                scale: [1, 1.1, 1],
+              }
+            : {}
+        }
         transition={{
           duration: 0.6,
           repeat: isAffordable && !isRedeemed ? Infinity : 0,
-          repeatDelay: 2
+          repeatDelay: 2,
         }}
       >
         {config.icon}
@@ -132,18 +145,18 @@ export const ProgressButton = ({
           transition={{
             duration: 1.5,
             repeat: Infinity,
-            ease: "easeInOut"
+            ease: "easeInOut",
           }}
         >
           <motion.div
             animate={{
               scale: [0.8, 1.2, 0.8],
-              rotate: [0, 180, 360]
+              rotate: [0, 180, 360],
             }}
             transition={{
               duration: 2,
               repeat: Infinity,
-              ease: "easeInOut"
+              ease: "easeInOut",
             }}
           >
             <Zap className="text-white/60" size={12} />

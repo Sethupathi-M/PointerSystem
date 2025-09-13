@@ -53,9 +53,7 @@ export default function Rewards() {
   }
 
   return (
-    <div
-      className={`h-full mt-4 relative flex flex-col ${rewards.length > 3 ? "px-0" : "px-5"}`}
-    >
+    <div className={`h-full mt-4 relative flex flex-col px-5`}>
       {/* Header with Filter */}
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold text-white">Rewards</h1>
@@ -81,7 +79,7 @@ export default function Rewards() {
             <Spinner />
           </div>
         ) : rewards && rewards.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
             {rewards.map((reward) => (
               <RewardCard key={reward.id} reward={reward} />
             ))}

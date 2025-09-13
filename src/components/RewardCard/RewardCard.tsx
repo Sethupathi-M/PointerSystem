@@ -1,13 +1,13 @@
-/* eslint-disable @next/next/no-img-element */
 import type { Reward } from "@/generated/prisma";
+import Image from "next/image";
 import { useTotalPoints } from "@/hooks/useTotalPoints";
 import { rewardApi } from "@/lib/api/rewardApi";
-import { useSelectedRewardStore } from "@/store/useSelectedRewardStore";
 import { useDrawerStore } from "@/store/useDrawerStore";
+import { useSelectedRewardStore } from "@/store/useSelectedRewardStore";
 import { DrawerType } from "@/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Crown, Edit, Sparkles, Star, Trash2, TrendingUp } from "lucide-react";
+import { Crown, Edit, Sparkles, Trash2, TrendingUp } from "lucide-react";
 import { useState } from "react";
 import { IconButton } from "../IconButton";
 import { ProgressButton } from "./ProgressButton";
@@ -189,11 +189,15 @@ export const RewardCard = ({ reward }: RewardCardProps) => {
         {/* Image Carousel */}
         {reward.imageCollection.length > 0 && (
           <div className="relative mb-4 -mx-4 -mt-4">
-            <img
-              src={reward.imageCollection[currentImageIndex]}
-              alt={reward.name}
-              className="w-full h-64 object-cover"
-            />
+            <div className="relative w-full h-64">
+              <Image
+                src={reward.imageCollection[currentImageIndex]}
+                alt={reward.name}
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              />
+            </div>
 
             {/* Image Navigation */}
             {reward.imageCollection.length > 1 && (
@@ -268,41 +272,41 @@ export const RewardCard = ({ reward }: RewardCardProps) => {
 
       {/* Footer Section */}
       <div className="px-4 pb-4 pt-2">
-        <div className="flex items-center justify-between">
-          {/* Points Display */}
-          <div className="flex items-center gap-2">
+        {/* <div className="flex items-center justify-between"> */}
+        {/* Points Display */}
+        {/* <div className="flex items-center gap-2">
             <Star className="text-yellow-400" size={18} />
             <span className="text-yellow-400 font-bold text-lg">
               {reward.cost}
             </span>
             <span className="text-zinc-400 text-sm">points</span>
-          </div>
+          </div> */}
 
-          {/* Action Button */}
-          <div className="flex-1 max-w-[200px]  absolute  right-4 ml-4 w-full">
-            {!reward.isRedeemed ? (
-              isAffordable ? (
-                <RedeemButton
-                  onClick={handleRedeem}
-                  disabled={isRedeeming}
-                  isLoading={isRedeeming}
-                />
-              ) : (
-                <ProgressButton
-                  currentPoints={totalPoints}
-                  requiredPoints={reward.cost}
-                  disabled={true}
-                />
-              )
+        {/* Action Button */}
+        <div className="flex-1 w-full">
+          {!reward.isRedeemed ? (
+            isAffordable ? (
+              <RedeemButton
+                onClick={handleRedeem}
+                disabled={isRedeeming}
+                isLoading={isRedeeming}
+              />
             ) : (
               <ProgressButton
                 currentPoints={totalPoints}
                 requiredPoints={reward.cost}
-                isRedeemed={true}
                 disabled={true}
               />
-            )}
-          </div>
+            )
+          ) : (
+            <ProgressButton
+              currentPoints={totalPoints}
+              requiredPoints={reward.cost}
+              isRedeemed={true}
+              disabled={true}
+            />
+          )}
+          {/* </div> */}
         </div>
 
         {/* Redeemed Date */}
