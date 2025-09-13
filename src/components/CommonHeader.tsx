@@ -1,11 +1,13 @@
 "use client";
 
-import { Zap, Crown } from "lucide-react";
+import { Zap, Crown, LogOut } from "lucide-react";
 import { identityApi } from "@/lib/api/identityApi";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { motion } from "framer-motion";
 import dynamic from "next/dynamic";
+import { IconButton } from "./IconButton";
+import { useIdentityContext } from "./IdentityContext";
 
 const Particles = dynamic(() => import("./Particles"), { ssr: false });
 
@@ -20,6 +22,12 @@ interface IdentityWithPoints {
 }
 
 export const CommonHeader = () => {
+  const { logout } = useIdentityContext();
+
+  const handleLogout = () => {
+    logout();
+  };
+
   // Fetch all identities to calculate total earned points
   const { data: identities, isLoading } = useQuery({
     queryKey: ["identity"],
@@ -66,46 +74,53 @@ export const CommonHeader = () => {
             </div>
           </div>
         </motion.div>
-
-        {/* Right Side - Minimalist Stats */}
-        <motion.div
-          initial={{ opacity: 0, x: 30 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6, ease: "easeOut", delay: 0.1 }}
-        >
-          <div className="px-4 py-2 rounded-lg bg-slate-800/40 border border-slate-600/30 backdrop-blur-sm">
-            <div className="flex items-center gap-2">
-              <Zap
-                className={`${isPositive ? "text-emerald-400" : "text-red-400"}`}
-                size={16}
-              />
-              <span className="text-xs text-slate-400">Total Points:</span>
-              <motion.span
-                className={`text-sm font-semibold ${isPositive ? "text-emerald-300" : "text-red-300"}`}
-                key={totalEarnedPoints}
-                initial={{ scale: 1.1, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.2 }}
-              >
-                {isLoading ? (
-                  <div className="flex items-center gap-1">
-                    <div className="w-1 h-1 bg-slate-400 rounded-full animate-bounce" />
-                    <div
-                      className="w-1 h-1 bg-slate-400 rounded-full animate-bounce"
-                      style={{ animationDelay: "0.1s" }}
-                    />
-                    <div
-                      className="w-1 h-1 bg-slate-400 rounded-full animate-bounce"
-                      style={{ animationDelay: "0.2s" }}
-                    />
-                  </div>
-                ) : (
-                  totalEarnedPoints.toLocaleString()
-                )}
-              </motion.span>
+        <div className="flex items-center gap-2">
+          {/* Right Side - Minimalist Stats */}
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, ease: "easeOut", delay: 0.1 }}
+          >
+            <div className="px-4 py-2 rounded-lg bg-slate-800/40 border border-slate-600/30 backdrop-blur-sm">
+              <div className="flex items-center gap-2">
+                <Zap
+                  className={`${isPositive ? "text-emerald-400" : "text-red-400"}`}
+                  size={16}
+                />
+                <span className="text-xs text-slate-400">Total Points:</span>
+                <motion.span
+                  className={`text-sm font-semibold ${isPositive ? "text-emerald-300" : "text-red-300"}`}
+                  key={totalEarnedPoints}
+                  initial={{ scale: 1.1, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {isLoading ? (
+                    <div className="flex items-center gap-1">
+                      <div className="w-1 h-1 bg-slate-400 rounded-full animate-bounce" />
+                      <div
+                        className="w-1 h-1 bg-slate-400 rounded-full animate-bounce"
+                        style={{ animationDelay: "0.1s" }}
+                      />
+                      <div
+                        className="w-1 h-1 bg-slate-400 rounded-full animate-bounce"
+                        style={{ animationDelay: "0.2s" }}
+                      />
+                    </div>
+                  ) : (
+                    totalEarnedPoints.toLocaleString()
+                  )}
+                </motion.span>
+              </div>
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
+          <IconButton
+            icon={<LogOut size={18} />}
+            onClick={handleLogout}
+            aria-label="Logout"
+            className="hover:bg-red-500/20 hover:text-red-400 transition-colors"
+          />
+        </div>
       </div>
 
       {/* Subtle Bottom Glow */}

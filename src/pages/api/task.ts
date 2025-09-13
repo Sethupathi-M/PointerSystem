@@ -26,6 +26,14 @@ export default async function handler(
                 isActive: true,
                 isFavorited: true,
               },
+              include: {
+                SubTask: true,
+                counterTask: {
+                  include: {
+                    CounterDayPoints: true,
+                  },
+                },
+              },
             })
           );
           return;
@@ -35,6 +43,14 @@ export default async function handler(
               where: {
                 isActive: true,
                 isAddedToToday: true,
+              },
+              include: {
+                SubTask: true,
+                counterTask: {
+                  include: {
+                    CounterDayPoints: true,
+                  },
+                },
               },
             })
           );

@@ -102,7 +102,7 @@ export const AddTask = ({ identityId }: { identityId: string }) => {
     <div className="w-full justify-center flex">
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="w-5/6 z-[9999] bottom-3 fixed flex items-center justify-between bg-zinc-700 rounded-lg p-2"
+        className="w-5/6 z-[9999] bottom-3 fixed flex items-center gap-3 justify-between bg-slate-800/90 backdrop-blur-sm rounded-xl p-3 border border-slate-600/30 shadow-lg shadow-slate-900/20"
       >
         <input
           {...register("taskName", {
@@ -111,18 +111,26 @@ export const AddTask = ({ identityId }: { identityId: string }) => {
           })}
           type="text"
           placeholder="Enter task name"
-          className="text-white text-2xl bg-zinc-700 outline-none p-1 rounded-lg w-full"
+          className="flex-1 text-white text-lg bg-slate-700/50 border border-slate-600/50 rounded-lg px-4 py-2 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-200 hover:border-slate-500/70"
+          autoComplete="off"
         />
-        <PointsInput
-          points={watch("points")}
-          setPoints={(val) => setValue("points", val)}
-          pointsType={watch("pointsType")}
-          setPointsType={(val) => setValue("pointsType", val)}
-        />
+        <div className="flex-shrink-0">
+          <PointsInput
+            points={watch("points")}
+            setPoints={(val) => setValue("points", val)}
+            pointsType={watch("pointsType")}
+            setPointsType={(val) => setValue("pointsType", val)}
+          />
+        </div>
         <IconButton
           type="submit"
-          icon={<SendHorizonalIcon className="size-7" />}
+          icon={<SendHorizonalIcon className="size-6" />}
           onClick={() => {}}
+          className={`flex-shrink-0 transition-all duration-200 ${
+            !watch("taskName")
+              ? "bg-slate-600/50 cursor-not-allowed text-slate-400 hover:bg-slate-600/50 opacity-50"
+              : "bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white shadow-lg shadow-cyan-500/25 hover:shadow-cyan-400/30"
+          }`}
         />
       </form>
     </div>
