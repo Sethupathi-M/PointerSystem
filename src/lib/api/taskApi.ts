@@ -1,10 +1,27 @@
 import type { Task } from "@/generated/prisma";
 import { api } from "@/lib/axios";
+import { QuotesResponse } from "@/types";
 
 export const taskApi = {
   // List all tasks
   getAll: async (): Promise<Task[]> => {
     const { data } = await api.get("/task");
+
+    return data;
+  },
+
+  getQuoteForAllIdentities: async (): Promise<QuotesResponse> => {
+    const { data } = await api.get("/task", {
+      params: { action: "get-quote-for-all-identities" },
+    });
+    return data;
+  },
+
+  // List tasks by identity
+  getTasksByIdentity: async (identityId: string): Promise<Task[]> => {
+    const { data } = await api.get("/task", {
+      params: { identityId },
+    });
 
     return data;
   },

@@ -57,6 +57,15 @@ export const MainSideBar = () => {
       listType: ListType.REWARDS,
       accentColor: "emerald",
     },
+    {
+      id: "status",
+      name: "Status",
+      path: "/status",
+      icon: <List className="text-indigo-400" />,
+      count: null,
+      listType: ListType.STATUS, // Using REWARDS for now, may need new type
+      accentColor: "indigo",
+    },
   ];
 
   const identityNavItems: INavItem[] = data

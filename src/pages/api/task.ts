@@ -13,6 +13,10 @@ export default async function handler(
 
     switch (method) {
       case "GET":
+        if (query.action === "get-quote-for-all-identities") {
+          res.status(200).json(await taskService.getQuoteForAllIdentities());
+          return;
+        }
         // Get all tasks or single task by ID
         if (query.id) {
           res

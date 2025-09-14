@@ -9,12 +9,15 @@ import { ListType } from "@/types";
 export function useNavPath(listType: ListType, id?: string): string {
   switch (listType) {
     case ListType.IDENTITY:
-      return `/identity/${id}`; 
+      return `/identity/${id}`;
     case ListType.REWARDS:
       return `/rewards`;
     case ListType.FAVOURITES:
-        return `/favourites`;
+      return `/favourites`;
     case ListType.MY_DAY:
+      return `/`;
+    case ListType.STATUS:
+      return `/status`;
     default:
       return `/`;
   }

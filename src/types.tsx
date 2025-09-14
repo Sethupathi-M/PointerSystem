@@ -12,6 +12,7 @@ export enum ListType {
   FAVOURITES = "favourites",
   IDENTITY = "identity",
   REWARDS = "rewards",
+  STATUS = "status",
 }
 
 export enum DrawerType {
@@ -49,3 +50,11 @@ export interface INavItem {
   listType: ListType;
   accentColor?: string;
 }
+
+export interface IdentityQuote {
+  id: string;
+  shortQuote: string;
+  advice: string;
+}
+
+export type QuotesResponse = IdentityQuote[];

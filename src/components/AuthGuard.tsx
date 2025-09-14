@@ -19,6 +19,11 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
       return;
     }
 
+    // Save current path before redirecting to login
+    if (pathname && pathname !== "/login") {
+      localStorage.setItem("lastVisitedPath", pathname);
+    }
+
     // Redirect to login for protected routes
     router.push("/login");
   }, [isLoggedIn, router, pathname]);

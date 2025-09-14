@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import AddIdentityDrawer from "@/components/Drawers/AddIdentityDrawer";
 import { CommonHeader } from "@/components/CommonHeader";
 import MainSideBar from "@/components/MainSideBar/MainSideBar";
@@ -16,6 +17,13 @@ const ClientWrapper = ({ children }: { children: React.ReactNode }) => {
   const { isLoggedIn } = useIdentityContext();
   const { isOpen, toggleDrawer } = useDrawerStore();
   const isTaskDetailsOpen = isOpen(DrawerType.TASK_DETAILS);
+  const pathname = usePathname();
+
+  useEffect(() => {
+    if (isLoggedIn && pathname && pathname !== "/login") {
+      localStorage.setItem("lastVisitedPath", pathname);
+    }
+  }, [isLoggedIn, pathname]);
 
   useEffect(() => {
     if (isLoggedIn) {

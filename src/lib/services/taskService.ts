@@ -1,7 +1,66 @@
 import { prisma } from "@/lib/prisma";
 import { Task, TaskType, PointsType } from "@/generated/prisma";
+import axios from "axios";
+import { QuotesResponse } from "@/types";
 
 export const taskService = {
+  getQuoteForAllIdentities: async (): Promise<QuotesResponse> => {
+    const identities = await prisma.identity.findMany({
+      where: {
+        isActive: true,
+      },
+      include: {
+        Task: {
+          where: {
+            isActive: true,
+            isBacklog: false,
+          },
+        },
+      },
+    });
+
+    const userContent = JSON.stringify(identities);
+
+    console.log(
+      "process.env.OPENROUTER_API_KEY",
+      process.env.OPENROUTER_API_KEY
+    );
+    // call openrouter api to get quote for all identities
+    const response = await axios.post(
+      "https://openrouter.ai/api/v1/chat/completions",
+      {
+        model: "openrouter/sonoma-dusk-alpha",
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are a motivational coach AI. For each identity provided, generate a JSON array named `results`. " +
+              "Each object must include exactly: {id: 'identity id', shortQuote: '≤15 words, personalized for the identity', " +
+              "advice: '≤25 words, concrete next step, based on that identity's tasks'}. " +
+              "Do NOT include tasks, points, or any other fields. " +
+              "Make quotes and advice specific to the identity and its tasks, actionable and meaningful.",
+          },
+          {
+            role: "user",
+            content: `Here are the identities to process:\n\n${userContent}`,
+          },
+        ],
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    let content = response.data.choices[0].message.content;
+    content = content.replace(/```(json)?/g, "");
+    content = content.trim();
+    const parsed = JSON.parse(content);
+    return parsed;
+  },
+
   // Get all tasks (optionally filtered by identityId or status)
   getAllTasks: async (
     identityId?: string,

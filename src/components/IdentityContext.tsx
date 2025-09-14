@@ -92,7 +92,12 @@ export const IdentityProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       // Server sets httpOnly cookie, fetch user data
       await fetchUser();
-      router.push("/");
+
+      // Redirect to last visited path or default to home
+      const lastPath = localStorage.getItem("lastVisitedPath");
+      console.log("lastPath", lastPath);
+      const redirectPath = lastPath && lastPath !== "/login" ? lastPath : "/";
+      router.push(redirectPath);
     } catch (error) {
       console.error("Login error:", error);
       throw error;
